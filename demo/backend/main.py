@@ -3,7 +3,7 @@ AI-Patient-Record-Intelligence - FastAPI Backend Demo
 Doctor-first, safety-critical patient record system
 """
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -215,7 +215,7 @@ async def login(request: LoginRequest):
     )
 
 @app.post("/api/v1/auth/logout")
-async def logout(authorization: str = None):
+async def logout(authorization: str = Header(None)):
     """Logout and invalidate token."""
     if authorization and authorization.startswith("Bearer "):
         token = authorization[7:]
@@ -232,7 +232,7 @@ async def logout(authorization: str = None):
 async def search_patient(
     method: str,
     value: str,
-    authorization: str = None
+    authorization: str = Header(None)
 ):
     """
     Search patient by multiple methods:
@@ -276,7 +276,7 @@ async def search_patient(
 # ============================================================================
 
 @app.get("/api/v1/patients/{patient_id}/snapshot", response_model=PatientSnapshot)
-async def get_patient_snapshot(patient_id: str, authorization: str = None):
+async def get_patient_snapshot(patient_id: str, authorization: str = Header(None)):
     """
     Get complete patient snapshot - the main clinical view.
     All critical data visible without scrolling.
@@ -426,7 +426,7 @@ async def get_patient_snapshot(patient_id: str, authorization: str = None):
 # ============================================================================
 
 @app.get("/api/v1/patients/{patient_id}/emergency", response_model=PatientEmergency)
-async def get_patient_emergency(patient_id: str, authorization: str = None):
+async def get_patient_emergency(patient_id: str, authorization: str = Header(None)):
     """
     Emergency mode: simplified critical data only.
     Loads in <1 second. High contrast. No scroll.
@@ -497,7 +497,7 @@ async def get_patient_emergency(patient_id: str, authorization: str = None):
 # ============================================================================
 
 @app.get("/api/v1/patients/{patient_id}/history")
-async def get_patient_history(patient_id: str, authorization: str = None):
+async def get_patient_history(patient_id: str, authorization: str = Header(None)):
     """Get full medical history - timeline view."""
     if not authorization or "Bearer " not in authorization:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -547,7 +547,7 @@ async def get_patient_history(patient_id: str, authorization: str = None):
 # ============================================================================
 
 @app.get("/api/v1/patients/{patient_id}/ai-summary")
-async def get_ai_summary(patient_id: str, authorization: str = None):
+async def get_ai_summary(patient_id: str, authorization: str = Header(None)):
     """
     Get AI-generated clinical summary.
     AI structures data but NEVER diagnoses, prescribes, or recommends.
@@ -637,7 +637,7 @@ async def get_ai_summary(patient_id: str, authorization: str = None):
 # ============================================================================
 
 @app.get("/api/v1/pharmacy/patients/{patient_id}")
-async def get_pharmacist_view(patient_id: str, authorization: str = None):
+async def get_pharmacist_view(patient_id: str, authorization: str = Header(None)):
     """
     Pharmacist-specific view: Same patient data, different emphasis.
     Emphasizes medications, allergies, and drug interactions.
