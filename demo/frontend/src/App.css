@@ -1,0 +1,660 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* ============ HEADER ============ */
+.header {
+  background: #0066CC;
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.header-left h1 {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.header-right {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.btn-logout {
+  background: #E63946;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-logout:hover {
+  background: #d62828;
+}
+
+/* ============ BUTTONS ============ */
+.btn-primary, .btn-secondary, .btn-danger, .btn-select, .btn-back, .btn-back-emergency {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #0066CC;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0052a3;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #f0f4f8;
+  color: #0066CC;
+  border: 1px solid #0066CC;
+}
+
+.btn-secondary:hover {
+  background: #0066CC;
+  color: white;
+}
+
+.btn-danger {
+  background: #E63946;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #d62828;
+}
+
+.btn-select {
+  background: #06A77D;
+  color: white;
+  padding: 8px 16px;
+}
+
+.btn-select:hover {
+  background: #048a6f;
+}
+
+.btn-back {
+  background: transparent;
+  color: #0066CC;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-bottom: 20px;
+}
+
+.btn-back:hover {
+  color: #0052a3;
+}
+
+/* ============ LOGIN ============ */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0066CC 0%, #0052a3 100%);
+  padding: 20px;
+}
+
+.login-card {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-card h1 {
+  color: #0066CC;
+  margin-bottom: 10px;
+  font-size: 28px;
+}
+
+.logo-subtitle {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 14px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #0066CC;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.error-message {
+  background: #FFE5E5;
+  color: #E63946;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.warning-message {
+  background: #FFF3E0;
+  color: #F77F00;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+
+.demo-credentials {
+  background: #F0F4F8;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+.demo-credentials h3 {
+  color: #0066CC;
+  margin-bottom: 10px;
+}
+
+.demo-credentials p {
+  margin: 5px 0;
+  font-family: monospace;
+}
+
+.info-box {
+  background: #E8F5E9;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 15px;
+  font-size: 13px;
+}
+
+/* ============ PATIENT SEARCH ============ */
+.patient-search {
+  padding: 20px;
+}
+
+.search-card {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  max-width: 600px;
+}
+
+.search-card h2 {
+  color: #0066CC;
+  margin-bottom: 20px;
+}
+
+.results {
+  margin-top: 30px;
+}
+
+.results h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.patient-card {
+  background: #F0F4F8;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.patient-info h4 {
+  color: #0066CC;
+  margin-bottom: 5px;
+}
+
+.patient-info p {
+  font-size: 13px;
+  color: #666;
+  margin: 3px 0;
+}
+
+/* ============ SNAPSHOT ============ */
+.snapshot-container {
+  padding: 20px;
+}
+
+.patient-header {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.patient-header h2 {
+  color: #0066CC;
+  margin-bottom: 10px;
+}
+
+.patient-header p {
+  color: #666;
+  font-size: 14px;
+}
+
+.alert-banner {
+  background: #FFE5E5;
+  border-left: 4px solid #E63946;
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.alert-banner h3 {
+  color: #E63946;
+  margin-bottom: 10px;
+}
+
+.alert-item {
+  background: white;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  color: #E63946;
+}
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .snapshot-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stable-data,
+.dynamic-data {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.stable-data {
+  border-left: 4px solid #0066CC;
+}
+
+.stable-data h3,
+.dynamic-data h3 {
+  margin-bottom: 15px;
+  color: #0066CC;
+}
+
+.data-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.data-section h4 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.data-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #0066CC;
+  margin: 10px 0;
+}
+
+.data-meta {
+  font-size: 12px;
+  color: #999;
+}
+
+.allergy-item,
+.condition-item,
+.med-item,
+.lab-item,
+.device-item,
+.dx-item {
+  background: #F9F9F9;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.severity-critical {
+  color: #E63946;
+  font-weight: bold;
+}
+
+.severity-high {
+  color: #F77F00;
+  font-weight: bold;
+}
+
+.severity-medium {
+  color: #FFC107;
+}
+
+.lab-item.high {
+  border-left: 3px solid #F77F00;
+}
+
+.lab-item.normal {
+  border-left: 3px solid #06A77D;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+}
+
+.data-footer {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  margin-top: 20px;
+}
+
+/* ============ EMERGENCY MODE ============ */
+.emergency-container {
+  background: #1A1A1A;
+  color: white;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.emergency-header {
+  background: #E63946;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.emergency-patient {
+  background: #2D2D2D;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.emergency-patient p {
+  margin: 5px 0;
+}
+
+.emergency-section {
+  background: #2D2D2D;
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border-left: 4px solid #0066CC;
+}
+
+.emergency-section h2 {
+  font-size: 32px;
+  margin-bottom: 15px;
+}
+
+.blood-type-value {
+  font-size: 72px;
+  font-weight: bold;
+  color: #E63946;
+  text-align: center;
+  padding: 20px;
+}
+
+.critical-allergies .emergency-allergy {
+  background: rgba(230, 57, 70, 0.2);
+  border-left: 3px solid #E63946;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+.allergy-severity {
+  color: #E63946;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.conditions-list,
+.medications {
+  font-size: 18px;
+}
+
+.condition,
+.medication {
+  margin: 8px 0;
+  padding: 8px;
+}
+
+.device-warning {
+  background: rgba(230, 57, 70, 0.2);
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.device-warning strong {
+  color: #E63946;
+}
+
+.emergency-section.warning {
+  border-left-color: #E63946;
+}
+
+.emergency-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.btn-back-emergency {
+  background: #E63946;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 18px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-back-emergency:hover {
+  background: #d62828;
+}
+
+.emergency-loading {
+  background: #1A1A1A;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* ============ AI SUMMARY ============ */
+.ai-summary-container {
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  max-width: 900px;
+  margin: 20px auto;
+}
+
+.ai-summary-container h2 {
+  color: #0066CC;
+  margin-bottom: 10px;
+}
+
+.patient-info {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.disclaimer {
+  background: #FFF3E0;
+  border-left: 4px solid #F77F00;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.summary-section {
+  margin-top: 25px;
+  padding: 20px;
+  background: #F9F9F9;
+  border-radius: 6px;
+}
+
+.summary-section h3 {
+  color: #0066CC;
+  margin-bottom: 15px;
+}
+
+.summary-section.critical {
+  background: #FFE5E5;
+}
+
+.summary-item {
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.summary-item strong {
+  display: block;
+  color: #0066CC;
+  margin-bottom: 5px;
+}
+
+.source {
+  background: #F0F4F8;
+  padding: 8px;
+  border-radius: 3px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.summary-footer {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+/* ============ LOADING ============ */
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
+/* ============ MAIN CONTENT ============ */
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .snapshot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions {
+    flex-direction: column;
+  }
+
+  .quick-actions button {
+    width: 100%;
+  }
+
+  .emergency-section h2 {
+    font-size: 24px;
+  }
+
+  .blood-type-value {
+    font-size: 48px;
+  }
+}
