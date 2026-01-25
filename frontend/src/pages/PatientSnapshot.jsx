@@ -1,3 +1,5 @@
+import FileUpload from './FileUpload'
+
 function PatientSnapshot({ token, userInfo, patient, onBack, onEmergencyMode, onViewAISummary, onLogout }) {
   if (!patient) {
     return <div>Loading...</div>
@@ -141,6 +143,11 @@ function PatientSnapshot({ token, userInfo, patient, onBack, onEmergencyMode, on
               ))}
             </div>
           </div>
+        </div>
+
+        <div style={{ marginTop: '30px', background: '#e8f4f8', padding: '20px', borderRadius: '12px', border: '3px solid #3498db' }}>
+          <h3 style={{ fontSize: '20px', color: '#2c3e50', marginBottom: '20px' }}>📄 Patient Documents</h3>
+          <FileUpload token={token} patientId={patient.patient_id} />
         </div>
       </div>
     </div>

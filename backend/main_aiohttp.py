@@ -2,6 +2,8 @@ from aiohttp import web
 import aiohttp_cors
 import secrets
 import json
+import os
+import re
 from datetime import datetime, timedelta
 from enum import Enum
 
@@ -637,6 +639,240 @@ async def get_pharmacy_view(request):
         ]
     })
 
+async def upload_file(request):
+    session = verify_token(request)
+    
+    try:
+        reader = await request.multipart()
+        file_content = b''
+        filename = ''
+        
+        async for field in reader:
+            if field.name == 'file':
+                filename = field.filename
+                file_content = await field.read()
+        
+        if not filename:
+            return web.json_response({
+                "success": False,
+                "message": "Missing file",
+                "extracted_data": {}
+            }, status=400)
+        
+        upload_dir = "uploads"
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
+        
+        file_path = os.path.join(upload_dir, filename)
+        with open(file_path, 'wb') as f:
+            f.write(file_content)
+        
+        text_content = ""
+        try:
+            text_content = file_content.decode('utf-8', errors='ignore')
+        except:
+            try:
+                text_content = file_content.decode('latin-1', errors='ignore')
+            except:
+                text_content = ""
+        
+        extracted_data = extract_patient_data(text_content, filename)
+        
+        if extracted_data.get('patient_id') and extracted_data.get('patient_record'):
+            DEMO_PATIENTS[extracted_data['patient_id']] = extracted_data['patient_record']
+        
+        return web.json_response({
+            "success": True,
+            "message": f"File '{filename}' processed successfully",
+            "filename": filename,
+            "file_size": len(file_content),
+            "upload_timestamp": datetime.now().isoformat(),
+            "extracted_data": extracted_data
+        })
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return web.json_response({
+            "success": False,
+            "message": f"Upload failed: {str(e)}",
+            "extracted_data": {}
+        }, status=500)
+
+def extract_patient_data(text_content, filename):
+    extracted = {
+        "patient_id": None,
+        "patient_name": None,
+        "date_of_birth": None,
+        "age": None,
+        "gender": None,
+        "blood_type": None,
+        "allergies": [],
+        "medications": [],
+        "conditions": [],
+        "vital_signs": {},
+        "chief_complaint": None,
+        "diagnoses": [],
+        "raw_text": text_content[:2000] if text_content else "",
+        "patient_record": None
+    }
+    
+    if not text_content or len(text_content.strip()) < 10:
+        return extracted
+    
+    name_patterns = [
+        r'Patient Name[:\s]+([A-Za-z\s,]+)',
+        r'Name[:\s]+([A-Za-z\s,]+)',
+        r'Patient[:\s]+([A-Za-z\s,]+)'
+    ]
+    for pattern in name_patterns:
+        match = re.search(pattern, text_content, re.IGNORECASE)
+        if match:
+            extracted['patient_name'] = match.group(1).strip()
+            break
+    
+    age_match = re.search(r'(\d{1,3})\s*(y/?o|year|years?\s*old)', text_content, re.IGNORECASE)
+    if age_match:
+        extracted['age'] = int(age_match.group(1))
+    
+    gender_match = re.search(r'\b(male|female|[MF])\b', text_content, re.IGNORECASE)
+    if gender_match:
+        g = gender_match.group(1).upper()
+        extracted['gender'] = 'M' if g in ['M', 'MALE'] else 'F'
+    
+    dob_match = re.search(r'(?:DOB|Date of Birth|Birth Date)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})', text_content, re.IGNORECASE)
+    if dob_match:
+        extracted['date_of_birth'] = dob_match.group(1)
+    
+    blood_match = re.search(r'\b(A|B|AB|O)[+-]\b', text_content)
+    if blood_match:
+        extracted['blood_type'] = blood_match.group(0)
+    
+    allergy_section = re.search(r'Allerg(?:y|ies)[:\s]+(.*?)(?:\n\n|\n[A-Z]|$)', text_content, re.IGNORECASE | re.DOTALL)
+    if allergy_section:
+        allergy_text = allergy_section.group(1)
+        common_allergens = ['Penicillin', 'Sulfa', 'Sulfonamides', 'Aspirin', 'Ibuprofen', 'Latex', 'Codeine', 'Morphine', 'Peanut', 'Shellfish']
+        for allergen in common_allergens:
+            if re.search(allergen, allergy_text, re.IGNORECASE):
+                severity = "HIGH"
+                if re.search(r'anaphyla|severe|critical', allergy_text, re.IGNORECASE):
+                    severity = "CRITICAL"
+                extracted['allergies'].append({
+                    "substance": allergen,
+                    "severity": severity,
+                    "reaction": "See medical record",
+                    "verified_date": datetime.now().strftime("%Y-%m-%d"),
+                    "source": f"Uploaded document: {filename}"
+                })
+    
+    med_patterns = [
+        r'(?:Medication|Medications|Current Medications|Rx)[:\s]+(.*?)(?:\n\n|\n[A-Z]|$)',
+        r'(?:taking|prescribed)[:\s]+(.*?)(?:\.|$)'
+    ]
+    for pattern in med_patterns:
+        med_section = re.search(pattern, text_content, re.IGNORECASE | re.DOTALL)
+        if med_section:
+            med_text = med_section.group(1)
+            common_meds = ['Metformin', 'Lisinopril', 'Atorvastatin', 'Omeprazole', 'Amlodipine', 'Metoprolol', 'Aspirin', 'Ibuprofen', 'Acetaminophen', 'Tylenol', 'Advil']
+            for med in common_meds:
+                if re.search(med, med_text, re.IGNORECASE):
+                    dose_match = re.search(rf'{med}\s*(\d+\s*mg)', med_text, re.IGNORECASE)
+                    extracted['medications'].append({
+                        "name": med,
+                        "dose": dose_match.group(1) if dose_match else "See record",
+                        "frequency": "As prescribed",
+                        "source": f"Uploaded document: {filename}"
+                    })
+            break
+    
+    condition_patterns = [
+        r'(?:History of Present Illness|HPI|Chief Complaint|Diagnosis|Assessment)[:\s]+(.*?)(?:\n\n|\n[A-Z]|$)',
+        r'(?:Medical History|Past Medical History|PMH)[:\s]+(.*?)(?:\n\n|\n[A-Z]|$)'
+    ]
+    conditions_found = []
+    common_conditions = ['Diabetes', 'Hypertension', 'HTN', 'Asthma', 'COPD', 'CHF', 'Heart Failure', 'Angina', 'Chest Pain', 'CAD', 'Coronary']
+    for pattern in condition_patterns:
+        section = re.search(pattern, text_content, re.IGNORECASE | re.DOTALL)
+        if section:
+            section_text = section.group(1)
+            for condition in common_conditions:
+                if re.search(condition, section_text, re.IGNORECASE) and condition not in conditions_found:
+                    conditions_found.append(condition)
+                    extracted['conditions'].append({
+                        "condition": condition,
+                        "status": "ACTIVE",
+                        "diagnosed_date": "See record",
+                        "source": f"Uploaded document: {filename}"
+                    })
+    
+    bp_match = re.search(r'(?:BP|Blood Pressure)[:\s]*(\d{2,3}[/]\d{2,3})', text_content, re.IGNORECASE)
+    if bp_match:
+        extracted['vital_signs']['blood_pressure'] = bp_match.group(1)
+    
+    pulse_match = re.search(r'(?:Pulse|HR|Heart Rate)[:\s]*(\d{2,3})', text_content, re.IGNORECASE)
+    if pulse_match:
+        extracted['vital_signs']['pulse'] = pulse_match.group(1)
+    
+    temp_match = re.search(r'(?:Temp|Temperature)[:\s]*(\d{2,3}(?:\.\d)?)', text_content, re.IGNORECASE)
+    if temp_match:
+        extracted['vital_signs']['temperature'] = temp_match.group(1)
+    
+    if extracted['patient_name']:
+        patient_id = f"PAT_{secrets.token_hex(3).upper()}"
+        extracted['patient_id'] = patient_id
+        
+        extracted['patient_record'] = {
+            "patient_id": patient_id,
+            "demographics": {
+                "name": extracted['patient_name'],
+                "date_of_birth": extracted['date_of_birth'] or "Unknown",
+                "age": extracted['age'] or 0,
+                "gender": extracted['gender'] or "Unknown",
+                "national_id": "Pending",
+                "contact": {
+                    "phone": "Pending",
+                    "email": "Pending",
+                    "address": "Pending"
+                }
+            },
+            "stable_data": {
+                "blood_type": extracted['blood_type'] or "Unknown",
+                "allergies": extracted['allergies'],
+                "genetic_conditions": [],
+                "chronic_conditions": [
+                    {
+                        "condition": c['condition'],
+                        "diagnosed_date": c['diagnosed_date'],
+                        "status": c['status'],
+                        "icd_code": "Pending"
+                    } for c in extracted['conditions']
+                ],
+                "implants_devices": []
+            },
+            "dynamic_data": {
+                "current_medications": [
+                    {
+                        "name": m['name'],
+                        "generic_name": m['name'],
+                        "dose": m['dose'],
+                        "frequency": m['frequency'],
+                        "route": "Oral",
+                        "start_date": datetime.now().strftime("%Y-%m-%d"),
+                        "prescriber": "See record",
+                        "indication": "See record",
+                        "source_system": "UPLOAD",
+                        "last_filled": datetime.now().strftime("%Y-%m-%d"),
+                        "refills_remaining": 0
+                    } for m in extracted['medications']
+                ],
+                "recent_labs": [],
+                "recent_diagnoses": [],
+                "recent_visits": []
+            }
+        }
+    
+    return extracted
+
 app = web.Application()
 cors = aiohttp_cors.setup(app, defaults={
     "*": aiohttp_cors.ResourceOptions(
@@ -652,6 +888,7 @@ app.router.add_get('/health', health_check)
 app.router.add_post('/api/v1/auth/login', login)
 app.router.add_post('/api/v1/auth/logout', logout)
 app.router.add_get('/api/v1/patients/search', search_patients)
+app.router.add_post('/api/v1/patients/upload', upload_file)
 app.router.add_get('/api/v1/patients/{patient_id}/snapshot', get_patient_snapshot)
 app.router.add_get('/api/v1/patients/{patient_id}/emergency', get_emergency_data)
 app.router.add_get('/api/v1/patients/{patient_id}/history', get_patient_history)

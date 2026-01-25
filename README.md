@@ -56,7 +56,7 @@ cd AI-Patient-Record-Intelligence
 
 ```powershell
 # Navigate to backend directory
-cd demo/backend
+cd backend
 
 # Create virtual environment
 python -m venv venv
@@ -78,7 +78,7 @@ python -c "import aiohttp; print('Backend ready!')"
 
 ```powershell
 # Navigate to frontend directory (from project root)
-cd demo/frontend
+cd frontend
 
 # Install dependencies
 npm install
@@ -260,7 +260,7 @@ Expected response:
 
 ```
 AI-Patient-Record-Intelligence/
-├───│
+├───│ 
 │   ├── backend/
 │   │   ├── venv/                 # Virtual environment
 │   │   ├── main_aiohttp.py       # aiohttp server (Python 3.14 compatible)
@@ -298,7 +298,7 @@ AI-Patient-Record-Intelligence/
 
 **Error: "Module not found: aiohttp"**
 ```bash
-cd demo/backend
+cd backend
 venv\Scripts\activate
 pip install aiohttp aiohttp-cors
 ```
@@ -317,7 +317,7 @@ pip install aiohttp aiohttp-cors
 
 **Error: "Cannot find module 'react'"**
 ```bash
-cd demo/frontend
+cd frontend
 rm -rf node_modules package-lock.json  # Windows: rmdir /s node_modules, del package-lock.json
 npm install
 ```

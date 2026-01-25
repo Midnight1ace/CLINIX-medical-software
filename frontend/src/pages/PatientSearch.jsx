@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import FileUpload from './FileUpload'
 
 const API_BASE = 'http://localhost:8000'
 
@@ -137,6 +138,12 @@ function PatientSearch({ token, userInfo, onPatientSelect, onLogout }) {
               ))}
             </div>
           )}
+        </div>
+
+        <div style={{ marginTop: '30px', background: '#e8f4f8', padding: '20px', borderRadius: '12px', border: '3px solid #3498db' }}>
+          <h3 style={{ fontSize: '20px', color: '#2c3e50', marginBottom: '10px' }}>📄 Upload Patient Records</h3>
+          <p style={{ fontSize: '14px', color: '#7f8c8d', marginBottom: '20px' }}>Drag and drop medical documents to add new patient records to the system</p>
+          <FileUpload token={token} patientId="NEW_PATIENT" />
         </div>
       </div>
     </div>
