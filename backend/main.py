@@ -11,9 +11,7 @@ from datetime import datetime, timedelta
 import json
 from pathlib import Path
 
-# ============================================================================
 # MODELS
-# ============================================================================
 
 class User(BaseModel):
     user_id: str
@@ -103,9 +101,7 @@ class AISummary(BaseModel):
     allergies: Dict[str, Any]
     clinical_notes: str
 
-# ============================================================================
 # DEMO DATA
-# ============================================================================
 
 DEMO_USERS = {
     "dr_johnson": {
@@ -157,9 +153,7 @@ DEMO_PATIENTS = {
     }
 }
 
-# ============================================================================
 # APP INITIALIZATION
-# ============================================================================
 
 app = FastAPI(
     title="AI-Patient-Record-Intelligence Demo",
@@ -179,9 +173,7 @@ app.add_middleware(
 # In-memory token storage (for demo only)
 active_tokens = {}
 
-# ============================================================================
 # AUTHENTICATION ENDPOINTS
-# ============================================================================
 
 @app.post("/api/v1/auth/login", response_model=LoginResponse)
 async def login(request: LoginRequest):
@@ -224,9 +216,7 @@ async def logout(authorization: str = Header(None)):
     
     return {"message": "Successfully logged out"}
 
-# ============================================================================
 # PATIENT SEARCH ENDPOINTS
-# ============================================================================
 
 @app.get("/api/v1/patients/search")
 async def search_patient(
@@ -271,9 +261,7 @@ async def search_patient(
         "patients": results
     }
 
-# ============================================================================
 # PATIENT SNAPSHOT ENDPOINT
-# ============================================================================
 
 @app.get("/api/v1/patients/{patient_id}/snapshot", response_model=PatientSnapshot)
 async def get_patient_snapshot(patient_id: str, authorization: str = Header(None)):
@@ -421,9 +409,7 @@ async def get_patient_snapshot(patient_id: str, authorization: str = Header(None
         }
     )
 
-# ============================================================================
 # EMERGENCY MODE ENDPOINT
-# ============================================================================
 
 @app.get("/api/v1/patients/{patient_id}/emergency", response_model=PatientEmergency)
 async def get_patient_emergency(patient_id: str, authorization: str = Header(None)):
@@ -492,9 +478,7 @@ async def get_patient_emergency(patient_id: str, authorization: str = Header(Non
         ]
     )
 
-# ============================================================================
 # HISTORY ENDPOINT
-# ============================================================================
 
 @app.get("/api/v1/patients/{patient_id}/history")
 async def get_patient_history(patient_id: str, authorization: str = Header(None)):
@@ -542,9 +526,7 @@ async def get_patient_history(patient_id: str, authorization: str = Header(None)
         ]
     }
 
-# ============================================================================
 # AI SUMMARY ENDPOINT
-# ============================================================================
 
 @app.get("/api/v1/patients/{patient_id}/ai-summary")
 async def get_ai_summary(patient_id: str, authorization: str = Header(None)):
@@ -632,9 +614,7 @@ async def get_ai_summary(patient_id: str, authorization: str = Header(None)):
         "clinical_notes": "AI noticed consistent diabetes management across all sources. No contradictions detected. Allergy information verified across multiple records."
     }
 
-# ============================================================================
 # PHARMACIST INTEGRATION ENDPOINT
-# ============================================================================
 
 @app.get("/api/v1/pharmacy/patients/{patient_id}")
 async def get_pharmacist_view(patient_id: str, authorization: str = Header(None)):
@@ -693,9 +673,7 @@ async def get_pharmacist_view(patient_id: str, authorization: str = Header(None)
         ]
     }
 
-# ============================================================================
 # HEALTH CHECK
-# ============================================================================
 
 @app.get("/health")
 async def health_check():
