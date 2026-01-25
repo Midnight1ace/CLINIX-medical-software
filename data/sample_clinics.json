@@ -1,0 +1,23 @@
+[
+  {
+    "id": "CLINIC_001",
+    "name": "Primary Care Clinic",
+    "department": "Family Medicine",
+    "phone": "555-0300",
+    "address": "789 Oak Ave, Medical Plaza"
+  },
+  {
+    "id": "CLINIC_002",
+    "name": "Cardiology Clinic",
+    "department": "Cardiology",
+    "phone": "555-0301",
+    "address": "101 Heart St, Medical Center"
+  },
+  {
+    "id": "CLINIC_003",
+    "name": "Endocrinology Clinic",
+    "department": "Endocrinology",
+    "phone": "555-0302",
+    "address": "202 Hormone Ave, Medical Plaza"
+  }
+]

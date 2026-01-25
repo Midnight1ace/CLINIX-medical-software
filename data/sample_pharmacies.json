@@ -1,0 +1,16 @@
+[
+  {
+    "id": "PHARM_001",
+    "name": "Central Hospital Pharmacy",
+    "address": "123 Main St, Hospital",
+    "phone": "555-0200",
+    "hours": "24/7"
+  },
+  {
+    "id": "PHARM_002",
+    "name": "Community Pharmacy Downtown",
+    "address": "456 Market St, Downtown",
+    "phone": "555-0201",
+    "hours": "8am-10pm"
+  }
+]

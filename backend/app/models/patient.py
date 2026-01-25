@@ -1,40 +1,46 @@
 """Patient Data Model"""
 
 from datetime import datetime
-from app.database.connection import db
+from sqlalchemy import String, Date, Boolean, Text, Column, DateTime
+from app.database.connection import Base
 
-class Patient(db.Model):
+class Patient(Base):
     """Patient profile and basic information"""
     
     __tablename__ = 'patients'
     
-    id = db.Column(db.String(50), primary_key=True)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=False)
-    date_of_birth = db.Column(db.Date, nullable=False)
-    gender = db.Column(db.String(10))
-    email = db.Column(db.String(120), unique=True)
-    phone = db.Column(db.String(20))
-    
+    __tablename__ = 'patients'
+
+    id = Column(String(50), primary_key=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    date_of_birth = Column(Date, nullable=False)
+    gender = Column(String(10))
+    email = Column(String(120), unique=True)
+    phone = Column(String(20))
+
     # Address
-    address_line1 = db.Column(db.String(255))
-    address_line2 = db.Column(db.String(255))
-    city = db.Column(db.String(100))
-    state = db.Column(db.String(50))
-    postal_code = db.Column(db.String(20))
-    country = db.Column(db.String(100))
-    
+    address_line1 = Column(String(255))
+    address_line2 = Column(String(255))
+    city = Column(String(100))
+    state = Column(String(50))
+    postal_code = Column(String(20))
+    country = Column(String(100))
+
     # Medical info
-    blood_type = db.Column(db.String(10))
-    allergies = db.Column(db.Text)
-    chronic_conditions = db.Column(db.Text)
-    emergency_contact = db.Column(db.String(255))
-    emergency_contact_phone = db.Column(db.String(20))
-    
+    blood_type = Column(String(10))
+    allergies = Column(Text)
+    chronic_conditions = Column(Text)
+    emergency_contact = Column(String(255))
+    emergency_contact_phone = Column(String(20))
+
+    # Additional fields for API compliance
+    national_id = Column(String(50))
+
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    active = db.Column(db.Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    active = Column(Boolean, default=True)
     
     def to_dict(self):
         return {

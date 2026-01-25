@@ -1,34 +1,35 @@
 """Alert Data Model"""
 
 from datetime import datetime
-from app.database.connection import db
+from sqlalchemy import String, Text, DateTime, Boolean, Column, ForeignKey
+from app.database.connection import Base
 
-class Alert(db.Model):
+class Alert(Base):
     """Patient alert for critical conditions"""
-    
+
     __tablename__ = 'alerts'
-    
-    id = db.Column(db.String(50), primary_key=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patients.id'), nullable=False)
-    
+
+    id = Column(String(50), primary_key=True)
+    patient_id = Column(String(50), ForeignKey('patients.id'), nullable=False)
+
     # Alert details
-    alert_type = db.Column(db.String(50))  # allergy, drug_interaction, condition, abnormal_result
-    severity = db.Column(db.String(20))  # critical, high, medium, low
-    title = db.Column(db.String(255), nullable=False)
-    description = db.Column(db.Text)
-    
+    alert_type = Column(String(50))  # allergy, drug_interaction, condition, abnormal_result
+    severity = Column(String(20))  # critical, high, medium, low
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+
     # Timeline
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    resolved_at = db.Column(db.DateTime)
-    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    resolved_at = Column(DateTime)
+
     # Status
-    active = db.Column(db.Boolean, default=True)
-    acknowledged_by = db.Column(db.String(50))
-    acknowledged_at = db.Column(db.DateTime)
-    
+    active = Column(Boolean, default=True)
+    acknowledged_by = Column(String(50))
+    acknowledged_at = Column(DateTime)
+
     # Reference
-    related_record_id = db.Column(db.String(50))
+    related_record_id = Column(String(50))
     
     def to_dict(self):
         return {

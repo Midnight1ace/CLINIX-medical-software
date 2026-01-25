@@ -1,0 +1,38 @@
+[
+  {
+    "id": "PAT_987654",
+    "first_name": "John",
+    "last_name": "Smith",
+    "date_of_birth": "1960-05-15",
+    "gender": "M",
+    "email": "john.smith@example.com",
+    "phone": "555-0100",
+    "blood_type": "O+",
+    "allergies": "Penicillin (Critical), Sulfonamides (High)",
+    "chronic_conditions": "Type 2 Diabetes, Hypertension, Asthma"
+  },
+  {
+    "id": "PAT_654321",
+    "first_name": "Mary",
+    "last_name": "Johnson",
+    "date_of_birth": "1955-08-22",
+    "gender": "F",
+    "email": "mary.johnson@example.com",
+    "phone": "555-0101",
+    "blood_type": "A-",
+    "allergies": "None documented",
+    "chronic_conditions": "Osteoarthritis, Hypothyroidism"
+  },
+  {
+    "id": "PAT_456789",
+    "first_name": "Robert",
+    "last_name": "Brown",
+    "date_of_birth": "1968-03-10",
+    "gender": "M",
+    "email": "robert.brown@example.com",
+    "phone": "555-0102",
+    "blood_type": "B+",
+    "allergies": "Aspirin (Medium)",
+    "chronic_conditions": "Coronary Artery Disease, Atrial Fibrillation"
+  }
+]

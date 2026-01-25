@@ -1,31 +1,31 @@
 """User Data Models - Doctor, Pharmacist, Staff"""
 
 from datetime import datetime
-from app.database.connection import db
+from sqlalchemy import String, Boolean, DateTime, Column
+from app.database.connection import Base
 from app.utils.security import hash_password, verify_password
 
-class User(db.Model):
+class User(Base):
     """Base User model"""
     
     __tablename__ = 'users'
     
-    id = db.Column(db.String(50), primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    first_name = db.Column(db.String(100))
-    last_name = db.Column(db.String(100))
-    role = db.Column(db.String(50), nullable=False)  # doctor, pharmacist, staff
-    
+    __tablename__ = 'users'
+
+    id = Column(String(50), primary_key=True)
+    email = Column(String(120), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    first_name = Column(String(100))
+    last_name = Column(String(100))
+    role = Column(String(50), nullable=False)  # doctor, pharmacist, staff
+
     # Status
-    active = db.Column(db.Boolean, default=True)
-    last_login = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    active = Column(Boolean, default=True)
+    last_login = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
     
-    __mapper_args__ = {
-        'polymorphic_identity': 'user',
-        'polymorphic_on': role
-    }
+    # Simplified - no inheritance for now
     
     def set_password(self, password):
         """Hash and store password"""
@@ -45,42 +45,4 @@ class User(db.Model):
             'active': self.active
         }
 
-class Doctor(User):
-    """Doctor user with medical credentials"""
-    
-    __tablename__ = 'doctors'
-    
-    id = db.Column(db.String(50), db.ForeignKey('users.id'), primary_key=True)
-    license_number = db.Column(db.String(100), unique=True)
-    specialization = db.Column(db.String(100))
-    department = db.Column(db.String(100))
-    
-    __mapper_args__ = {
-        'polymorphic_identity': 'doctor'
-    }
-
-class Pharmacist(User):
-    """Pharmacist user"""
-    
-    __tablename__ = 'pharmacists'
-    
-    id = db.Column(db.String(50), db.ForeignKey('users.id'), primary_key=True)
-    license_number = db.Column(db.String(100), unique=True)
-    pharmacy_id = db.Column(db.String(50))
-    
-    __mapper_args__ = {
-        'polymorphic_identity': 'pharmacist'
-    }
-
-class Staff(User):
-    """Administrative staff user"""
-    
-    __tablename__ = 'staff'
-    
-    id = db.Column(db.String(50), db.ForeignKey('users.id'), primary_key=True)
-    department = db.Column(db.String(100))
-    job_title = db.Column(db.String(100))
-    
-    __mapper_args__ = {
-        'polymorphic_identity': 'staff'
-    }
+# Simplified user model - subclasses removed for now
