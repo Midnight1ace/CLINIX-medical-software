@@ -96,7 +96,7 @@ npm list react
 #### Terminal 1: Start Backend Server
 
 ```powershell
-cd demo/backend
+cd backend
 venv\Scripts\python.exe main_aiohttp.py
 
 # macOS/Linux:
@@ -125,7 +125,7 @@ Demo Patients:
 #### Terminal 2: Start Frontend Server
 
 ```powershell
-cd demo/frontend
+cd frontend
 npm run dev
 ```
 
@@ -260,7 +260,7 @@ Expected response:
 
 ```
 AI-Patient-Record-Intelligence/
-├── demo/
+├───│
 │   ├── backend/
 │   │   ├── venv/                 # Virtual environment
 │   │   ├── main_aiohttp.py       # aiohttp server (Python 3.14 compatible)
@@ -283,7 +283,7 @@ AI-Patient-Record-Intelligence/
 │   │   ├── package.json          # Node dependencies
 │   │   └── vite.config.js        # Vite configuration
 │   │
-│   ├── README.md                 # This file
+│   │
 │   ├── QUICKSTART.md             # Quick setup guide
 │   └── MANUAL_SETUP.md           # Troubleshooting guide
 │
