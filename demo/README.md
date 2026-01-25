@@ -1,24 +1,48 @@
-# AI-Patient-Record-Intelligence DEMO
+# AI-Patient-Record-Intelligence Demo
 
-A working demonstration of the doctor-first, safety-critical patient record system.
+A fully functional demonstration of the doctor-first, safety-critical patient record system.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### Prerequisites
-- Python 3.9+ (backend)
-- Node.js 16+ (frontend)
-- npm or yarn
+### Windows (PowerShell)
+```powershell
+cd demo
+.\start-demo.ps1
+```
 
-### 1. Backend Setup (Terminal 1)
+### macOS/Linux (Bash)
+```bash
+cd demo
+chmod +x start-demo.sh
+./start-demo.sh
+```
+
+The script will:
+1. Check prerequisites (Python 3.9+, Node.js 16+)
+2. Set up backend (create venv, install dependencies)
+3. Set up frontend (install npm packages)
+4. Start both servers
+5. Open your browser to http://localhost:5173
+
+---
+
+## Manual Setup
+
+### Backend (Terminal 1)
 
 ```bash
 cd demo/backend
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -27,9 +51,9 @@ pip install -r requirements.txt
 python main.py
 ```
 
-**Backend runs on:** `http://localhost:8000`
+**Backend runs on:** http://localhost:8000
 
-### 2. Frontend Setup (Terminal 2)
+### Frontend (Terminal 2)
 
 ```bash
 cd demo/frontend
@@ -41,33 +65,22 @@ npm install
 npm run dev
 ```
 
-**Frontend runs on:** `http://localhost:5173`
-
-### 3. Open Browser
-
-Go to: **http://localhost:5173**
+**Frontend runs on:** http://localhost:5173
 
 ---
 
-## 🔐 Demo Credentials
+## Demo Credentials
 
 ### Doctors
-- **Username:** `dr_johnson`
-- **Password:** `demo123`
-- **Role:** DOCTOR
-
-Alternative:
-- **Username:** `dr_hassan`
-- **Password:** `demo123`
+- **Username:** `dr_johnson` / **Password:** `demo123` (DOCTOR)
+- **Username:** `dr_hassan` / **Password:** `demo123` (DOCTOR)
 
 ### Pharmacist
-- **Username:** `pharm_smith`
-- **Password:** `demo123`
-- **Role:** PHARMACIST
+- **Username:** `pharm_smith` / **Password:** `demo123` (PHARMACIST)
 
 ---
 
-## 🧪 Demo Patient Data
+## Demo Patient Data
 
 ### Patient 1: John Smith (Main Demo)
 - **Patient ID:** `PAT_987654`
@@ -76,73 +89,54 @@ Alternative:
 - **Allergies:** Penicillin (CRITICAL), Sulfonamides, Latex
 - **Chronic Conditions:** Type 2 Diabetes, Hypertension, Asthma
 - **Implants:** Pacemaker (2019)
-- **Current Meds:** Metformin 500mg, Lisinopril 10mg
+- **Current Meds:** Metformin 500mg, Lisinopril 10mg, Albuterol Inhaler
 
 ### Patient 2: Mary Johnson
 - **Patient ID:** `PAT_654321`
 - **Age:** 69 | DOB: 1955-08-22
 - **Blood Type:** A-
+- **Allergies:** Aspirin
+- **Chronic Conditions:** Osteoarthritis
 
 ---
 
-## 📋 Demo Workflow
+## Demo Workflow (3-4 minutes)
 
 ### 1. Login (0:00-0:30)
-```
-→ Use: dr_johnson / demo123
-→ Observe: Role automatically detected (DOCTOR)
-```
+- Use: `dr_johnson` / `demo123`
+- Observe: Role automatically detected (DOCTOR)
 
 ### 2. Patient Search (0:30-1:00)
-```
-→ Search for: PAT_987654
-→ Results: John Smith (perfect match)
-→ Click: SELECT PATIENT
-```
+- Search for: `PAT_987654`
+- Results: John Smith (perfect match)
+- Click: **Select Patient**
 
 ### 3. Patient Snapshot (1:00-2:00)
-```
-→ Observe: ALL critical data visible (no scroll)
-→ Notice: Alert banner at top (Penicillin allergy)
-→ Left side: Stable data (locked, blood type, allergies)
-→ Right side: Dynamic data (medications, labs, timestamped)
-```
+- Observe: ALL critical data visible (no scroll)
+- Notice: Alert banner at top (Penicillin allergy)
+- Left side: Stable data (locked, blood type, allergies)
+- Right side: Dynamic data (medications, labs, timestamped)
 
-### 4. Key Features to Highlight
-```
-→ Stable vs Dynamic Data distinction
-→ Alert banner (impossible to miss)
-→ Original data sources shown
-→ Patient header with key info
-```
+### 4. Emergency Mode (2:00-2:30)
+- Click: **🚨 Emergency Mode**
+- Observe: Black background, large text, high contrast
+- Data shows: Blood type, allergies, chronic conditions, meds
+- Fast load: < 1 second
 
-### 5. Emergency Mode (2:00-2:30)
-```
-→ Click: [🚨 Emergency Mode]
-→ Observe: Black background, large text, high contrast
-→ Data shows: Blood type, allergies, chronic conditions, meds
-→ Fast load: < 1 second
-```
+### 5. AI Summary (2:30-3:00)
+- Go back to snapshot
+- Click: **AI Summary**
+- See: Structured data with source links
+- Notice: Disclaimer about AI limitations
 
-### 6. AI Summary (2:30-3:00)
-```
-→ Go back to snapshot
-→ Look for: AI Summary option
-→ See: Structured data with source links
-→ Notice: Disclaimer about AI limitations
-```
-
-### 7. Role Switch (3:00-3:30)
-```
-→ Logout
-→ Login as: pharm_smith / demo123
-→ View same patient: Different emphasis (medications focus)
-→ Show: Drug interactions, medication history
-```
+### 6. Role Switch (3:00-3:30)
+- Logout
+- Login as: `pharm_smith` / `demo123`
+- View same patient: Different emphasis (medications focus)
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Authentication
 ```
@@ -153,7 +147,6 @@ POST /api/v1/auth/logout
 ### Patient Search
 ```
 GET /api/v1/patients/search?method=PATIENT_ID&value=PAT_987654
-GET /api/v1/patients/search?method=PARTIAL_NAME&value=John%20Smith
 ```
 
 ### Patient Data
@@ -176,130 +169,65 @@ GET /health
 
 ---
 
-## 🧪 Test API with cURL
+## Features Implemented
 
-### 1. Login
-```bash
-curl -X POST http://localhost:8000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "dr_johnson",
-    "password": "demo123",
-    "hospital_id": "HOSP_001"
-  }'
-```
+### Backend (FastAPI)
+- Complete REST API (10+ endpoints)
+- Authentication system (login/logout)
+- Patient search (6 methods supported)
+- Patient snapshot (main clinical view)
+- Emergency mode (crisis mode)
+- AI summary generation
+- Role-based integration (Doctor/Pharmacist)
+- Comprehensive demo data
 
-### 2. Search Patient
-```bash
-TOKEN="your_token_here"
-curl http://localhost:8000/api/v1/patients/search?method=PATIENT_ID&value=PAT_987654 \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### 3. Get Snapshot
-```bash
-curl http://localhost:8000/api/v1/patients/PAT_987654/snapshot \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### 4. Get Emergency Data
-```bash
-curl http://localhost:8000/api/v1/patients/PAT_987654/emergency \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### 5. Get AI Summary
-```bash
-curl http://localhost:8000/api/v1/patients/PAT_987654/ai-summary \
-  -H "Authorization: Bearer $TOKEN"
-```
+### Frontend (React + Vite)
+- Professional hospital UI
+- Responsive design
+- Hospital-grade color scheme
+- All screens:
+  - Login page
+  - Patient search
+  - Patient snapshot (main view)
+  - Emergency mode (high contrast)
+  - AI summary view
+  - Role-based views
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 demo/
 ├── backend/
 │   ├── main.py                 # FastAPI application
 │   ├── requirements.txt        # Python dependencies
-│   ├── .env.example           # Environment variables
-│   └── __pycache__/           # Python cache
+│   └── .env.example           # Environment variables
 │
-└── frontend/
-    ├── src/
-    │   ├── main.jsx           # React entry point
-    │   ├── App.jsx            # Main app component
-    │   ├── App.css            # Main styles
-    │   ├── index.css          # Base styles
-    │   ├── pages/
-    │   │   ├── Login.jsx      # Login page
-    │   │   ├── PatientSearch.jsx
-    │   │   ├── PatientSnapshot.jsx
-    │   │   ├── EmergencyMode.jsx
-    │   │   └── AISummary.jsx
-    │   └── components/        # (optional)
-    ├── index.html             # HTML template
-    ├── package.json           # Node dependencies
-    ├── vite.config.js         # Vite configuration
-    └── node_modules/          # Installed packages
+├── frontend/
+│   ├── src/
+│   │   ├── main.jsx           # React entry point
+│   │   ├── App.jsx            # Main app component
+│   │   ├── App.css            # Main styles
+│   │   ├── index.css          # Base styles
+│   │   └── pages/
+│   │       ├── Login.jsx
+│   │       ├── PatientSearch.jsx
+│   │       ├── PatientSnapshot.jsx
+│   │       ├── EmergencyMode.jsx
+│   │       └── AISummary.jsx
+│   ├── index.html             # HTML template
+│   ├── package.json           # Node dependencies
+│   └── vite.config.js         # Vite configuration
+│
+├── README.md                  # This file
+├── start-demo.ps1            # Windows startup script
+└── start-demo.sh             # macOS/Linux startup script
 ```
 
 ---
 
-## 🎨 UI Features Implemented
-
-### ✅ Login Screen
-- Hospital credential entry
-- Demo credentials displayed
-- Error handling
-
-### ✅ Patient Search
-- Multiple search methods (Patient ID, Name, National ID)
-- Results ranking
-- Patient selection
-
-### ✅ Patient Snapshot (Main View)
-- Two-column layout (Stable vs Dynamic data)
-- Alert banner with critical warnings
-- Patient header with key demographics
-- Color-coded data (green = normal, yellow = warning, red = critical)
-- Timestamped information
-- Source system indicators
-
-### ✅ Emergency Mode
-- High contrast (black background)
-- Large readable text (48px+)
-- Essential data only
-- One-button exit
-- Fast load time
-
-### ✅ AI Summary
-- Structured conditions, medications, allergies
-- Source document links
-- Confidence indicators
-- Disclaimer about AI limitations
-
-### ✅ Role-Based Views
-- Different emphasis for different roles
-- Same backend, different UI
-
----
-
-## 🔒 Security in Demo
-
-⚠️ **Note:** This is a **demo only**. Production would include:
-
-✅ JWT tokens (not demo tokens)
-✅ Bcrypt password hashing
-✅ HTTPS/TLS encryption
-✅ Comprehensive audit logging
-✅ Database encryption
-✅ HIPAA compliance validation
-
----
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Backend won't start
 ```
@@ -322,42 +250,14 @@ Error: CORS error in browser console
 
 ### Python dependencies error
 ```
-→ Solution: Ensure Python 3.9+
+→ Solution: Ensure Python 3.14+
 → Solution: Run: pip install --upgrade pip
 → Solution: Run: pip install -r requirements.txt
 ```
 
 ---
 
-## 📊 Demo Data Structure
-
-### Patient Snapshot Contains:
-- ✅ Patient demographics
-- ✅ Alert banner (critical warnings)
-- ✅ Stable data (blood type, allergies, chronic conditions)
-- ✅ Dynamic data (medications, labs, diagnoses)
-- ✅ Data sources (which system provided each piece of data)
-- ✅ Last update timestamps
-
-### Emergency Mode Contains:
-- ✅ Blood type (large, prominent)
-- ✅ Critical allergies
-- ✅ Chronic conditions
-- ✅ Current medications
-- ✅ Implanted devices
-- ✅ Recent vitals
-
-### AI Summary Contains:
-- ✅ Structured conditions
-- ✅ Medications with sources
-- ✅ Allergies (critical/verified)
-- ✅ Recent tests
-- ✅ Clinical notes (no diagnosis/prescription)
-- ✅ Disclaimer about AI limitations
-
----
-
-## 🎯 Key Demo Points
+## Key Demo Points
 
 ### What Judges Should Notice:
 
@@ -388,7 +288,7 @@ Error: CORS error in browser console
 
 ---
 
-## 📝 Notes
+## Notes
 
 - Demo uses in-memory data (no database)
 - Tokens expire after 15 minutes
@@ -397,42 +297,19 @@ Error: CORS error in browser console
 
 ---
 
-## 🚀 Next Steps
+## Security (Demo Only)
 
-### To Deploy:
-1. See [DEPLOYMENT.md](../DEPLOYMENT.md) for production setup
-2. Configure PostgreSQL database
-3. Set up HTTPS/SSL certificates
-4. Configure CORS for production domain
-5. Implement JWT security
-6. Add comprehensive logging
+⚠️ **Note:** This is a **demo only**. Production would include:
 
-### To Extend:
-1. Add real database integration
-2. Implement document storage
-3. Add AI summarization with LLM
-4. Integrate with hospital systems
-5. Add comprehensive audit trails
+- JWT tokens (not demo tokens)
+- Bcrypt password hashing
+- HTTPS/TLS encryption
+- Comprehensive audit logging
+- Database encryption
+- HIPAA compliance validation
 
 ---
 
-## 📞 Support
-
-For issues, see main documentation:
-- [README.md](../README.md)
-- [SYSTEM_ARCHITECTURE.md](../SYSTEM_ARCHITECTURE.md)
-- [API_REFERENCE.md](../API_REFERENCE.md)
-
----
-
-## ⏱️ Session Info
-
-- **Login timeout:** 15 minutes
-- **Session behavior:** Auto-logout on timeout
-- **Token type:** Bearer token (demo mode)
-
----
-
-**Demo Version:** 1.0
-**Last Updated:** January 24, 2026
+**Demo Version:** 1.0  
+**Last Updated:** January 25, 2026  
 **Status:** Ready to run
