@@ -255,6 +255,15 @@ Expected response:
 - Previous Surgeries: Knee Replacement (2018)
 - Current Medications: Acetaminophen 500mg
 
+**PAT_123456 - Robert Davis (58M)**
+- Blood Type: B+
+- Critical Allergies: None
+- Chronic Conditions: Coronary Artery Disease, Hyperlipidemia
+- Previous Surgeries: Coronary Bypass (2020)
+- Current Medications: Aspirin 81mg, Atorvastatin 40mg, Metoprolol 50mg
+- Recent Labs: Troponin HIGH (indicating myocardial infarction), ECG shows ST elevation
+- Emergency: Acute Myocardial Infarction (Heart Attack) - Requires immediate intervention
+
 ---
 
 ## Project Structure

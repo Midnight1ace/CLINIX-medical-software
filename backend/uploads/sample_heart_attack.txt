@@ -1,0 +1,76 @@
+**Emergency Department Record**
+
+**Patient Demographics:**
+- Name: Robert Davis
+- Date of Birth: March 15, 1968 (Age: 58)
+- Gender: Male
+- Medical Record Number: PAT_123456
+- Date of Admission: January 26, 2026
+- Attending Physician: Dr. Emergency Response
+
+**Chief Complaint:**
+Acute chest pain and shortness of breath.
+
+**History of Present Illness:**
+Mr. Davis is a 58-year-old male with a history of coronary artery disease who presents to the ED with acute onset of severe substernal chest pain that began 30 minutes ago. The pain is described as crushing, 9/10 in intensity, radiating to the left arm and neck. Associated symptoms include profuse sweating, nausea, and severe shortness of breath. He has a history of coronary bypass surgery in 2020. He took sublingual nitroglycerin at home with minimal relief.
+
+**Past Medical History:**
+- Coronary Artery Disease (diagnosed 2018)
+- Hyperlipidemia
+- Coronary Artery Bypass Graft (CABG) in 2020
+- No known drug allergies
+- Previous surgeries: CABG x3 vessels (2020)
+
+**Medications:**
+- Aspirin 81mg daily
+- Atorvastatin 40mg daily
+- Metoprolol 50mg twice daily
+- Lisinopril 10mg daily
+
+**Social History:**
+- Former smoker (quit 2020)
+- No alcohol use
+- Retired accountant
+
+**Family History:**
+- Father: Myocardial infarction at age 55
+- Brother: Coronary artery disease
+
+**Vital Signs on Admission:**
+- Blood Pressure: 180/110 mmHg
+- Heart Rate: 110 bpm, irregular
+- Respiratory Rate: 24/min
+- Temperature: 98.8°F
+- Oxygen Saturation: 92% on room air
+
+**Physical Examination:**
+- General: Diaphoretic, anxious male in acute distress
+- Cardiovascular: Irregular heartbeat, no murmurs, no jugular venous distension
+- Respiratory: Tachypneic, clear lung fields bilaterally
+- Abdomen: Soft, non-tender
+- Extremities: No edema
+
+**Diagnostic Studies:**
+- ECG: ST elevation in leads II, III, aVF (inferior wall myocardial infarction)
+- Troponin I: 15.2 ng/mL (elevated)
+- CK-MB: 45 IU/L (elevated)
+- BNP: 850 pg/mL (elevated)
+
+**Impression:**
+Acute ST-elevation myocardial infarction (STEMI), inferior wall
+Killip Class I
+TIMI Risk Score: 4 (high risk)
+
+**Plan:**
+- Immediate cardiac catheterization
+- Aspirin 325mg, Clopidogrel 300mg loading
+- Heparin infusion
+- Nitroglycerin IV
+- Morphine for pain control
+- Oxygen supplementation
+- Transfer to cardiac cath lab emergently
+
+**Critical Alerts:**
+🚨 EMERGENCY: STEMI Protocol Activated
+🚨 No beta-blockers until cardiologist evaluation
+🚨 Monitor for arrhythmias
