@@ -24,5 +24,4 @@ services:
           type: web
           name: ai-patient-backend
           property: hostport
-          envVarKey: VITE_API_URL
     autoDeploy: true
