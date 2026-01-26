@@ -133,7 +133,7 @@ npm run dev
 ```
 VITE v5.x.x  ready in xxx ms
 
-➜  Local:   http://localhost:5173/
+➜  Local:   http://localhost:5173/ (**the 5173 is just an example**)
 ➜  Network: use --host to expose
 ```
 
