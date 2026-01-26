@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import FileUpload from './FileUpload'
+import FileBrowser from './FileBrowser'
 
 const API_BASE = 'http://localhost:8000'
 
@@ -9,6 +10,7 @@ function PatientSearch({ token, userInfo, onPatientSelect, onLogout }) {
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showFileBrowser, setShowFileBrowser] = useState(false)
 
   const handleSearch = async (e) => {
     e.preventDefault()
@@ -63,6 +65,7 @@ function PatientSearch({ token, userInfo, onPatientSelect, onLogout }) {
           <h1>Patient Search</h1>
           <div className="user-info">
             <span>{userInfo.name} ({userInfo.role})</span>
+            <button onClick={() => setShowFileBrowser(true)} className="btn-secondary">📁 Browse Files</button>
             <button onClick={onLogout} className="btn-secondary">Logout</button>
           </div>
         </div>
@@ -146,6 +149,14 @@ function PatientSearch({ token, userInfo, onPatientSelect, onLogout }) {
           <FileUpload token={token} patientId="NEW_PATIENT" />
         </div>
       </div>
+
+      {showFileBrowser && (
+        <FileBrowser
+          token={token}
+          onFileSelect={() => setShowFileBrowser(false)}
+          onClose={() => setShowFileBrowser(false)}
+        />
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import PatientSearch from './pages/PatientSearch'
 import PatientSnapshot from './pages/PatientSnapshot'
 import EmergencyMode from './pages/EmergencyMode'
 import AISummary from './pages/AISummary'
+import FileBrowser from './pages/FileBrowser'
 
 const API_BASE = 'http://localhost:8000'
 
@@ -13,6 +14,7 @@ function App() {
   const [authToken, setAuthToken] = useState(null)
   const [userInfo, setUserInfo] = useState(null)
   const [selectedPatient, setSelectedPatient] = useState(null)
+  const [showFileBrowser, setShowFileBrowser] = useState(false)
 
   const handleLogin = async (credentials) => {
     try {
@@ -105,6 +107,7 @@ function App() {
             token={authToken}
             patient={selectedPatient}
             onBack={() => navigateTo('snapshot')}
+            onOpenFileBrowser={() => setShowFileBrowser(true)}
           />
         )
       
@@ -113,9 +116,21 @@ function App() {
     }
   }
 
+  const handleFileSelect = (file) => {
+    console.log('Selected file:', file)
+    setShowFileBrowser(false)
+  }
+
   return (
     <div className="app">
       {renderPage()}
+      {showFileBrowser && authToken && (
+        <FileBrowser
+          token={authToken}
+          onFileSelect={handleFileSelect}
+          onClose={() => setShowFileBrowser(false)}
+        />
+      )}
     </div>
   )
 }

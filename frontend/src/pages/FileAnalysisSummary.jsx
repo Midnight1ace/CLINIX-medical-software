@@ -40,7 +40,6 @@ function FileAnalysisSummary({ file, token, onClose, onViewSource }) {
   const buildEncounters = (extractedData) => {
     const encounters = []
     
-    // Create encounter from extracted data
     if (extractedData && Object.keys(extractedData).length > 0) {
       encounters.push({
         id: 1,
@@ -62,11 +61,237 @@ function FileAnalysisSummary({ file, token, onClose, onViewSource }) {
   }
 
   const buildSummaryFromData = (data) => {
-    const parts = []
-    if (data.chief_complaint) parts.push(data.chief_complaint)
-    if (data.diagnosis) parts.push(`Diagnosis: ${data.diagnosis}`)
-    if (data.assessment) parts.push(data.assessment)
-    return parts.join('. ') || 'Medical record information'
+    // Return structured data instead of plain text
+    return {
+      patient: {
+        name: data.patient_name || 'Unknown',
+        age: data.age || 'N/A',
+        gender: data.gender === 'M' ? 'Male' : data.gender === 'F' ? 'Female' : 'N/A'
+      },
+      chiefComplaint: data.chief_complaint || null,
+      diagnoses: data.diagnoses && Array.isArray(data.diagnoses) ? data.diagnoses : [],
+      vitalSigns: data.vital_signs || {},
+      medications: data.medications && Array.isArray(data.medications) ? data.medications : [],
+      conditions: data.conditions && Array.isArray(data.conditions) ? data.conditions : [],
+      allergies: data.allergies && Array.isArray(data.allergies) ? data.allergies : []
+    }
+  }
+
+  const renderStructuredSummary = (summaryData) => {
+    if (typeof summaryData === 'string') {
+      return <div>{summaryData}</div>
+    }
+
+    return (
+      <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
+        {/* Patient Header */}
+        <div style={{ 
+          marginBottom: '15px', 
+          paddingBottom: '10px', 
+          borderBottom: '2px solid #3498db' 
+        }}>
+          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2c3e50', marginBottom: '5px' }}>
+            {summaryData.patient.name}
+          </div>
+          <div style={{ color: '#7f8c8d', fontSize: '14px' }}>
+            {summaryData.patient.age} year old {summaryData.patient.gender}
+          </div>
+        </div>
+
+        {/* Chief Complaint */}
+        {summaryData.chiefComplaint && (
+          <div style={{ marginBottom: '15px' }}>
+            <div style={{ 
+              fontWeight: 'bold', 
+              color: '#2c3e50', 
+              marginBottom: '8px',
+              fontSize: '14px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Chief Complaint
+            </div>
+            <div style={{ 
+              padding: '12px 15px', 
+              backgroundColor: '#e8f4f8', 
+              borderLeft: '4px solid #3498db',
+              borderRadius: '4px',
+              color: '#2c3e50',
+              fontSize: '14px',
+              lineHeight: '1.6',
+              fontStyle: 'italic'
+            }}>
+              "{summaryData.chiefComplaint}"
+            </div>
+          </div>
+        )}
+
+        {/* Vital Signs */}
+        {Object.keys(summaryData.vitalSigns).length > 0 && (
+          <div style={{ marginBottom: '15px' }}>
+            <div style={{ 
+              fontWeight: 'bold', 
+              color: '#2c3e50', 
+              marginBottom: '5px',
+              fontSize: '13px'
+            }}>
+              Vital Signs:
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              gap: '10px', 
+              flexWrap: 'wrap',
+              padding: '8px 12px',
+              backgroundColor: '#fff3cd',
+              borderRadius: '4px',
+              border: '1px solid #ffc107'
+            }}>
+              {summaryData.vitalSigns.blood_pressure && (
+                <span><strong>BP:</strong> {summaryData.vitalSigns.blood_pressure}</span>
+              )}
+              {summaryData.vitalSigns.pulse && (
+                <span><strong>HR:</strong> {summaryData.vitalSigns.pulse} bpm</span>
+              )}
+              {summaryData.vitalSigns.temperature && (
+                <span><strong>Temp:</strong> {summaryData.vitalSigns.temperature}°F</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Diagnoses */}
+        {summaryData.diagnoses.length > 0 && (
+          <div style={{ marginBottom: '15px' }}>
+            <div style={{ 
+              fontWeight: 'bold', 
+              color: '#2c3e50', 
+              marginBottom: '5px',
+              fontSize: '13px'
+            }}>
+              Assessment/Diagnosis:
+            </div>
+            <div style={{ 
+              padding: '8px 12px', 
+              backgroundColor: '#e7f3ff', 
+              borderRadius: '4px',
+              border: '1px solid #3498db'
+            }}>
+              {summaryData.diagnoses.map((diag, i) => (
+                <div key={i} style={{ 
+                  marginBottom: i < summaryData.diagnoses.length - 1 ? '4px' : '0',
+                  color: '#2c3e50'
+                }}>
+                  {i + 1}. {diag}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Conditions */}
+        {summaryData.conditions.length > 0 && (
+          <div style={{ marginBottom: '15px' }}>
+            <div style={{ 
+              fontWeight: 'bold', 
+              color: '#2c3e50', 
+              marginBottom: '5px',
+              fontSize: '13px'
+            }}>
+              Conditions:
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {summaryData.conditions.map((cond, i) => (
+                <span key={i} style={{
+                  backgroundColor: '#9b59b6',
+                  color: 'white',
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  fontWeight: '500'
+                }}>
+                  {cond.condition || cond.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Allergies */}
+        {summaryData.allergies.length > 0 && (
+          <div style={{ marginBottom: '15px' }}>
+            <div style={{ 
+              fontWeight: 'bold', 
+              color: '#c0392b', 
+              marginBottom: '5px',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}>
+              ⚠️ Allergies:
+            </div>
+            <div style={{ 
+              padding: '8px 12px', 
+              backgroundColor: '#ffe6e6', 
+              borderRadius: '4px',
+              border: '2px solid #e74c3c'
+            }}>
+              {summaryData.allergies.map((allergy, i) => (
+                <div key={i} style={{ 
+                  marginBottom: i < summaryData.allergies.length - 1 ? '6px' : '0',
+                  paddingBottom: i < summaryData.allergies.length - 1 ? '6px' : '0',
+                  borderBottom: i < summaryData.allergies.length - 1 ? '1px solid #ffcccc' : 'none'
+                }}>
+                  <span style={{ fontWeight: 'bold', color: '#c0392b' }}>
+                    {allergy.substance}
+                  </span>
+                  <span style={{ 
+                    marginLeft: '6px',
+                    padding: '2px 6px',
+                    backgroundColor: allergy.severity === 'CRITICAL' ? '#c0392b' : '#e74c3c',
+                    color: 'white',
+                    borderRadius: '4px',
+                    fontSize: '10px',
+                    fontWeight: 'bold'
+                  }}>
+                    {allergy.severity}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Medications */}
+        {summaryData.medications.length > 0 && (
+          <div>
+            <div style={{ 
+              fontWeight: 'bold', 
+              color: '#2c3e50', 
+              marginBottom: '5px',
+              fontSize: '13px'
+            }}>
+              Medications:
+            </div>
+            <div style={{ 
+              padding: '8px 12px', 
+              backgroundColor: '#fff3e0', 
+              borderRadius: '4px',
+              border: '1px solid #ff9800'
+            }}>
+              {summaryData.medications.map((med, i) => (
+                <div key={i} style={{ 
+                  marginBottom: i < summaryData.medications.length - 1 ? '4px' : '0',
+                  color: '#555'
+                }}>
+                  • <strong>{med.name}</strong> - {med.dose}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   const parseContentSections = (content) => {
@@ -171,18 +396,17 @@ function FileAnalysisSummary({ file, token, onClose, onViewSource }) {
     }
   }
 
-  const getConfidenceColor = (value) => {
-    const num = parseInt(value) || 0
-    if (num >= 90) return '#27ae60'
-    if (num >= 75) return '#f39c12'
-    return '#e74c3c'
+  const getFieldConfidence = (value, defaultValue = 'Unknown') => {
+    if (!value || value === defaultValue || value === 'Not specified') return 0
+    if (value.includes('See record') || value.includes('Pending')) return 50
+    return 100
   }
 
-  const getConfidencePercentage = (data) => {
-    if (typeof data === 'object' && data.confidence) {
-      return parseInt(data.confidence) || 100
-    }
-    return 100
+  const getConfidenceColor = (confidence) => {
+    if (confidence >= 90) return '#28a745'
+    if (confidence >= 70) return '#3498db'
+    if (confidence >= 40) return '#f39c12'
+    return '#e74c3c'
   }
 
   if (loading) {
@@ -225,115 +449,96 @@ function FileAnalysisSummary({ file, token, onClose, onViewSource }) {
           <div className="document-preview-panel">
             <h3>📄 Document Content</h3>
             <div className="document-preview-content">
-              {analysis.rawContent.substring(0, 2000)}
-              {analysis.rawContent.length > 2000 && '...'}
+              {analysis.rawContent}
             </div>
           </div>
         </div>
 
-        {/* Right side - Structured Data */}
+        {/* Right side - Clinical Summary */}
         <div className="analysis-data-side">
           <div className="analysis-header-top">
-            <h2>Encounters</h2>
+            <h2>Clinical Summary</h2>
             <button onClick={onClose} className="btn-close">✕</button>
           </div>
 
           <div className="encounters-container">
             {analysis.encounters && analysis.encounters.map((encounter, idx) => (
-              <div key={idx} className="encounter-card">
-                <div className="encounter-title">
-                  <h4>Encounter #{idx + 1}</h4>
+              <div key={idx} style={{ 
+                padding: '20px',
+                backgroundColor: '#ffffff',
+                borderRadius: '8px',
+                border: '1px solid #dee2e6'
+              }}>
+                {/* Encounter Metadata - Compact Header */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 15px',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '6px',
+                  marginBottom: '20px',
+                  border: '1px solid #dee2e6'
+                }}>
+                  <div style={{ display: 'flex', gap: '20px', fontSize: '13px', flexWrap: 'wrap' }}>
+                    {encounter.date && encounter.date !== 'Unknown' && (
+                      <div>
+                        <strong style={{ color: '#6c757d' }}>Date:</strong>{' '}
+                        <span style={{ color: '#2c3e50' }}>{encounter.date}</span>
+                      </div>
+                    )}
+                    {encounter.type && (
+                      <div>
+                        <strong style={{ color: '#6c757d' }}>Type:</strong>{' '}
+                        <span style={{ color: '#2c3e50' }}>{encounter.type}</span>
+                      </div>
+                    )}
+                    {encounter.provider && encounter.provider !== 'Not specified' && (
+                      <div>
+                        <strong style={{ color: '#6c757d' }}>Provider:</strong>{' '}
+                        <span style={{ color: '#2c3e50' }}>{encounter.provider}</span>
+                      </div>
+                    )}
+                    {encounter.facility && encounter.facility !== 'Not specified' && (
+                      <div>
+                        <strong style={{ color: '#6c757d' }}>Facility:</strong>{' '}
+                        <span style={{ color: '#2c3e50' }}>{encounter.facility}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Date Field */}
-                <div className="encounter-field">
-                  <label>Date</label>
-                  <div className="field-content">
-                    <span className="field-value">{encounter.date}</span>
-                    <span className="confidence-badge" style={{ backgroundColor: '#28a745' }}>100%</span>
-                  </div>
-                  {encounter.date && (
-                    <button 
-                      className="btn-field-search"
-                      onClick={() => handleHighlightClick({ text: encounter.date })}
-                      title="Find in document"
-                    >
-                      🔍
-                    </button>
-                  )}
-                </div>
-
-                {/* Type Field */}
-                <div className="encounter-field">
-                  <label>Type</label>
-                  <div className="field-content">
-                    <span className="field-value">{encounter.type}</span>
-                    <span className="confidence-badge" style={{ backgroundColor: '#3498db' }}>90%</span>
-                  </div>
-                  {encounter.type && (
-                    <button 
-                      className="btn-field-search"
-                      onClick={() => handleHighlightClick({ text: encounter.type })}
-                      title="Find in document"
-                    >
-                      🔍
-                    </button>
-                  )}
-                </div>
-
-                {/* Provider Field */}
-                <div className="encounter-field">
-                  <label>Provider</label>
-                  <div className="field-content">
-                    <input 
-                      type="text" 
-                      className="field-input" 
-                      value={encounter.provider}
-                      readOnly
-                    />
-                    <span className="confidence-badge" style={{ backgroundColor: '#e74c3c' }}>0%</span>
-                  </div>
-                  {encounter.provider && encounter.provider !== 'Not specified' && (
-                    <button 
-                      className="btn-field-search"
-                      onClick={() => handleHighlightClick({ text: encounter.provider })}
-                      title="Find in document"
-                    >
-                      🔍
-                    </button>
-                  )}
-                </div>
-
-                {/* Facility Field */}
-                <div className="encounter-field">
-                  <label>Facility</label>
-                  <div className="field-content">
-                    <span className="field-value">{encounter.facility}</span>
-                    <span className="confidence-badge" style={{ backgroundColor: '#28a745' }}>100%</span>
-                  </div>
-                  {encounter.facility && (
-                    <button 
-                      className="btn-field-search"
-                      onClick={() => handleHighlightClick({ text: encounter.facility })}
-                      title="Find in document"
-                    >
-                      🔍
-                    </button>
-                  )}
-                </div>
-
-                {/* Summary Field */}
-                <div className="encounter-field full-width">
-                  <label>Summary</label>
-                  <div className="field-content">
-                    <span className="field-value">{encounter.summary}</span>
-                    <span className="confidence-badge" style={{ backgroundColor: '#28a745' }}>100%</span>
-                  </div>
+                {/* Main Summary - Full Focus */}
+                <div style={{ 
+                  width: '100%', 
+                  padding: '20px',
+                  borderRadius: '8px',
+                  border: '2px solid #3498db',
+                  backgroundColor: '#ffffff',
+                  maxHeight: '600px',
+                  overflowY: 'auto'
+                }}>
+                  {renderStructuredSummary(encounter.summary)}
                 </div>
 
                 {/* Action Button */}
-                <div className="encounter-actions">
-                  <button className="btn-approve-record">
+                <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                  <button 
+                    className="btn-approve-record"
+                    style={{
+                      backgroundColor: '#28a745',
+                      color: 'white',
+                      border: 'none',
+                      padding: '12px 30px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#218838'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#28a745'}
+                  >
                     ✓ Approve & Save Record
                   </button>
                 </div>

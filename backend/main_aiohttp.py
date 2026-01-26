@@ -1,11 +1,17 @@
 from aiohttp import web
-import aiohttp_cors
 import secrets
 import json
 import os
 import re
 from datetime import datetime, timedelta
 from enum import Enum
+from pathlib import Path
+
+# noinspection PyUnresolvedReference
+import pdfplumber
+
+# noinspection PyUnresolvedReference  
+import aiohttp_cors
 
 class UserRole(str, Enum):
     DOCTOR = "DOCTOR"
@@ -366,7 +372,7 @@ async def login(request):
     
     user = DEMO_USERS[username]
     token = secrets.token_urlsafe(32)
-    expires_at = datetime.now() + timedelta(minutes=15)
+    expires_at = datetime.now() + timedelta(hours=8)
     
     active_sessions[token] = {
         "user_id": user["user_id"],
@@ -471,6 +477,14 @@ async def get_emergency_data(request):
         raise web.HTTPNotFound(text="Patient not found")
     
     patient = DEMO_PATIENTS[patient_id]
+    
+    # Get all allergies for emergency mode
+    all_allergies = [
+        {"substance": a["substance"], "reaction": a["reaction"], "severity": a["severity"]}
+        for a in patient["stable_data"]["allergies"]
+    ]
+    
+    # Get recent vitals from labs
     recent_vitals = [lab for lab in patient["dynamic_data"].get("recent_labs", []) 
                      if lab["test_name"] in ["Blood Pressure", "Blood Glucose (Fasting)", "Heart Rate"]]
     
@@ -479,11 +493,9 @@ async def get_emergency_data(request):
         "patient_name": patient["demographics"]["name"],
         "date_of_birth": patient["demographics"]["date_of_birth"],
         "age": patient["demographics"]["age"],
+        "gender": patient["demographics"].get("gender", "Unknown"),
         "blood_type": patient["stable_data"]["blood_type"],
-        "critical_allergies": [
-            {"substance": a["substance"], "reaction": a["reaction"], "severity": a["severity"]}
-            for a in patient["stable_data"]["allergies"] if a["severity"] in ["CRITICAL", "HIGH"]
-        ],
+        "critical_allergies": all_allergies,
         "chronic_conditions": [
             {"condition": c["condition"], "status": c["status"]}
             for c in patient["stable_data"]["chronic_conditions"]
@@ -491,6 +503,20 @@ async def get_emergency_data(request):
         "current_medications": [
             {"name": m["name"], "dose": m["dose"], "frequency": m["frequency"]}
             for m in patient["dynamic_data"]["current_medications"]
+        ],
+        "recent_diagnoses": [
+            {"diagnosis": d.get("diagnosis"), "date": d.get("date"), "provider": d.get("provider")}
+            for d in patient["dynamic_data"].get("recent_diagnoses", [])
+        ],
+        "recent_visits": [
+            {
+                "date": v.get("date"),
+                "type": v.get("type"),
+                "provider": v.get("provider"),
+                "facility": v.get("facility"),
+                "chief_complaint": v.get("chief_complaint")
+            }
+            for v in patient["dynamic_data"].get("recent_visits", [])[:3]
         ],
         "implants_devices": patient["stable_data"]["implants_devices"],
         "recent_vitals": recent_vitals[:3],
@@ -551,10 +577,10 @@ async def get_ai_summary(request):
                 {
                     "name": c["condition"],
                     "status": c["status"],
-                    "diagnosed_date": c["diagnosed_date"],
-                    "icd_code": c["icd_code"],
+                    "diagnosed_date": c.get("diagnosed_date", "Unknown"),
+                    "icd_code": c.get("icd_code", "Pending"),
                     "confidence": "HIGH",
-                    "source": "Multiple hospital records"
+                    "source": c.get("source", "Uploaded document")
                 }
                 for c in patient["stable_data"]["chronic_conditions"]
             ],
@@ -563,10 +589,10 @@ async def get_ai_summary(request):
                     "name": m["name"],
                     "dose": m["dose"],
                     "frequency": m["frequency"],
-                    "indication": m["indication"],
-                    "prescriber": m["prescriber"],
+                    "indication": m.get("indication", "See record"),
+                    "prescriber": m.get("prescriber", "Not specified"),
                     "confidence": "HIGH",
-                    "source": f"Pharmacy System (Last filled: {m['last_filled']})"
+                    "source": f"Uploaded document (Last filled: {m.get('last_filled', 'Unknown')})"
                 }
                 for m in patient["dynamic_data"]["current_medications"]
             ],
@@ -576,7 +602,7 @@ async def get_ai_summary(request):
                     "severity": a["severity"],
                     "reaction": a["reaction"],
                     "confidence": "CRITICAL",
-                    "source": f"{a['source']} (Verified: {a['verified_date']})"
+                    "source": f"{a.get('source', 'Uploaded document')} (Verified: {a.get('verified_date', 'Unknown')})"
                 }
                 for a in patient["stable_data"]["allergies"]
             ],
@@ -585,17 +611,40 @@ async def get_ai_summary(request):
                     "test": l["test_name"],
                     "value": l["value"],
                     "date": l["date"],
-                    "status": l["status"],
+                    "status": l.get("status", "Normal"),
                     "confidence": "HIGH",
-                    "source": l["facility"]
+                    "source": l.get("facility", "Unknown facility")
                 }
                 for l in patient["dynamic_data"].get("recent_labs", [])[:5]
+            ],
+            "recent_diagnoses": [
+                {
+                    "diagnosis": d.get("diagnosis", "Unknown"),
+                    "date": d.get("date", "Unknown"),
+                    "provider": d.get("provider", "Not specified"),
+                    "confidence": "HIGH",
+                    "source": "Uploaded document"
+                }
+                for d in patient["dynamic_data"].get("recent_diagnoses", [])
+            ],
+            "recent_visits": [
+                {
+                    "date": v.get("date", "Unknown"),
+                    "type": v.get("type", "Medical Encounter"),
+                    "provider": v.get("provider", "Not specified"),
+                    "facility": v.get("facility", "Unknown"),
+                    "chief_complaint": v.get("chief_complaint", "See record"),
+                    "diagnosis": v.get("diagnosis", "See record"),
+                    "confidence": "HIGH",
+                    "source": "Uploaded document"
+                }
+                for v in patient["dynamic_data"].get("recent_visits", [])
             ],
             "implants_devices": [
                 {
                     "type": d["type"],
                     "model": d.get("model", "N/A"),
-                    "date_implanted": d["date_implanted"],
+                    "date_implanted": d.get("date_implanted", "Unknown"),
                     "confidence": "HIGH",
                     "source": "Hospital surgical records"
                 }
@@ -638,7 +687,107 @@ async def get_pharmacy_view(request):
             for m in patient["dynamic_data"]["current_medications"]
         ]
     })
+async def browse_files(request):
+    """List all files in the uploads directory"""
+    session = verify_token(request)
+    
+    uploads_dir = Path("uploads")
+    if not uploads_dir.exists():
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+    
+    files = []
+    try:
+        for file_path in uploads_dir.glob("*"):
+            if file_path.is_file():
+                stat_info = file_path.stat()
+                size_readable = f"{stat_info.st_size / 1024:.2f} KB" if stat_info.st_size < 1024*1024 else f"{stat_info.st_size / (1024*1024):.2f} MB"
+                files.append({
+                    "name": file_path.name,
+                    "path": str(file_path.relative_to(uploads_dir)),
+                    "size": stat_info.st_size,
+                    "size_readable": size_readable,
+                    "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
+                    "type": "document"
+                })
+    except Exception as e:
+        raise web.HTTPInternalServerError(text=f"Error reading files: {str(e)}")
+    
+    files.sort(key=lambda x: x["modified"], reverse=True)
+    
+    return web.json_response({
+        "total_files": len(files),
+        "files": files,
+        "upload_directory": str(uploads_dir)
+    })
 
+async def get_file_content(request):
+    """Get content of a specific file, including full PDF extraction"""
+    session = verify_token(request)
+    filename = request.match_info['filename']
+    
+    uploads_dir = Path("uploads")
+    file_path = uploads_dir / filename
+    
+    # Security check: ensure file is within uploads directory
+    try:
+        if not file_path.resolve().is_relative_to(uploads_dir.resolve()):
+            raise web.HTTPForbidden(text="Access denied")
+    except ValueError:
+        raise web.HTTPForbidden(text="Access denied")
+    
+    if not file_path.exists():
+        raise web.HTTPNotFound(text="File not found")
+    
+    if not file_path.is_file():
+        raise web.HTTPBadRequest(text="Not a file")
+    
+    try:
+        content = ""
+        is_pdf = filename.lower().endswith('.pdf')
+        
+        # Extract text from PDF
+        if is_pdf:
+            try:
+                with pdfplumber.open(file_path) as pdf:
+                    for page_num, page in enumerate(pdf.pages, 1):
+                        extracted_text = page.extract_text()
+                        if extracted_text:
+                            content += f"\n--- PAGE {page_num} ---\n{extracted_text}\n"
+                    
+                    # Also extract tables if present
+                    for page_num, page in enumerate(pdf.pages, 1):
+                        tables = page.extract_tables()
+                        if tables:
+                            content += f"\n--- TABLES ON PAGE {page_num} ---\n"
+                            for table in tables:
+                                for row in table:
+                                    content += " | ".join(str(cell) if cell else "" for cell in row) + "\n"
+            except Exception as pdf_error:
+                print(f"Error reading PDF with pdfplumber: {pdf_error}")
+                # Fallback: try to read as text
+                try:
+                    content = file_path.read_text(encoding='utf-8', errors='ignore')
+                except:
+                    content = f"[PDF file could not be extracted: {str(pdf_error)}]"
+        else:
+            # Read text files
+            try:
+                content = file_path.read_text(encoding='utf-8', errors='ignore')
+            except UnicodeDecodeError:
+                try:
+                    content = file_path.read_text(encoding='latin-1', errors='ignore')
+                except:
+                    content = "[Binary file - cannot display as text]"
+        
+        return web.json_response({
+            "filename": filename,
+            "size": file_path.stat().st_size,
+            "content": content,
+            "is_pdf": is_pdf,
+            "modified": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+        })
+    except Exception as e:
+        raise web.HTTPInternalServerError(text=f"Error reading file: {str(e)}")
 async def upload_file(request):
     session = verify_token(request)
     
@@ -669,17 +818,41 @@ async def upload_file(request):
         
         text_content = ""
         try:
-            text_content = file_content.decode('utf-8', errors='ignore')
-        except:
-            try:
-                text_content = file_content.decode('latin-1', errors='ignore')
-            except:
-                text_content = ""
+            # Check if it's a PDF file
+            if filename.lower().endswith('.pdf'):
+                try:
+                    import io
+                    pdf_file = io.BytesIO(file_content)
+                    with pdfplumber.open(pdf_file) as pdf:
+                        for page in pdf.pages:
+                            text_content += page.extract_text() + "\n"
+                except Exception as pdf_error:
+                    print(f"Error reading PDF: {pdf_error}")
+                    text_content = ""
+            else:
+                # Try text decoding for non-PDF files
+                try:
+                    text_content = file_content.decode('utf-8', errors='ignore')
+                except:
+                    try:
+                        text_content = file_content.decode('latin-1', errors='ignore')
+                    except:
+                        text_content = ""
+        except Exception as e:
+            print(f"Error processing file: {e}")
+            text_content = ""
         
         extracted_data = extract_patient_data(text_content, filename)
         
+        print(f"=== EXTRACTED DATA ===")
+        print(f"Date: {extracted_data.get('encounter_date')}")
+        print(f"Provider: {extracted_data.get('provider')}")
+        print(f"Type: {extracted_data.get('encounter_type')}")
+        print(f"Facility: {extracted_data.get('facility')}")
+        
         if extracted_data.get('patient_id') and extracted_data.get('patient_record'):
             DEMO_PATIENTS[extracted_data['patient_id']] = extracted_data['patient_record']
+            print(f"✓ Patient record created: {extracted_data['patient_id']} - {extracted_data.get('patient_name')}")
         
         return web.json_response({
             "success": True,
@@ -687,7 +860,10 @@ async def upload_file(request):
             "filename": filename,
             "file_size": len(file_content),
             "upload_timestamp": datetime.now().isoformat(),
-            "extracted_data": extracted_data
+            "extracted_data": extracted_data,
+            "patient_id": extracted_data.get('patient_id'),
+            "patient_name": extracted_data.get('patient_name'),
+            "patient_created": bool(extracted_data.get('patient_id'))
         })
     
     except Exception as e:
@@ -713,7 +889,11 @@ def extract_patient_data(text_content, filename):
         "vital_signs": {},
         "chief_complaint": None,
         "diagnoses": [],
-        "raw_text": text_content[:2000] if text_content else "",
+        "encounter_date": None,
+        "encounter_type": None,
+        "provider": None,
+        "facility": None,
+        "raw_text": text_content if text_content else "",
         "patient_record": None
     }
     
@@ -721,49 +901,107 @@ def extract_patient_data(text_content, filename):
         return extracted
     
     name_patterns = [
-        r'Patient Name[:\s]+([A-Za-z\s,]+)',
-        r'Name[:\s]+([A-Za-z\s,]+)',
-        r'Patient[:\s]+([A-Za-z\s,]+)'
+        r'Patient Name[:\s]+([A-Za-z]+,\s*[A-Za-z]+)',
+        r'Patient Name[:\s]+([A-Za-z\s]+?)(?:\n|Date)',
+        r'Name[:\s]+([A-Za-z\s,]+?)(?:\n|$)'
     ]
     for pattern in name_patterns:
         match = re.search(pattern, text_content, re.IGNORECASE)
         if match:
-            extracted['patient_name'] = match.group(1).strip()
+            name = match.group(1).strip()
+            # Clean up name - remove extra text
+            name = re.sub(r'\s+', ' ', name)
+            if len(name) > 2 and len(name) < 50:
+                extracted['patient_name'] = name
+                break
+    
+    # Extract age - be more specific
+    age_patterns = [
+        r'(\d{1,3})\s*y/?o\s+(?:WF|WM|BF|BM|male|female)',
+        r'(\d{1,3})\s*(?:year|years)\s*old',
+        r'\(Age:\s*(\d{1,3})\)',
+        r'Age:\s*(\d{1,3})'
+    ]
+    for pattern in age_patterns:
+        age_match = re.search(pattern, text_content, re.IGNORECASE)
+        if age_match:
+            age = int(age_match.group(1))
+            if 0 < age < 120:
+                extracted['age'] = age
+                break
+    
+    # Extract gender - be more specific
+    gender_patterns = [
+        (r'(\d{1,3})\s*y/?o\s+(WF|WM|BF|BM)', 2),
+        (r'Gender[:\s]+(Male|Female|M|F)', 1),
+        (r'\b(male|female)\s+(?:who|patient)', 1),
+        (r'(Mr|Ms|Mrs)\.', 1)
+    ]
+    for pattern, group_idx in gender_patterns:
+        gender_match = re.search(pattern, text_content, re.IGNORECASE)
+        if gender_match:
+            g = gender_match.group(group_idx).upper()
+            if 'F' in g or 'FEMALE' in g.upper() or 'MS' in g or 'MRS' in g:
+                extracted['gender'] = 'F'
+                break
+            elif 'M' in g or 'MALE' in g.upper() or g == 'MR':
+                extracted['gender'] = 'M'
+                break
+    
+    # Extract DOB with multiple patterns
+    dob_patterns = [
+        r'(?:DOB|Date of Birth|Birth Date)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})',
+        r'(?:DOB|Date of Birth)[:\s]+([A-Za-z]+\s+\d{1,2},\s+\d{4})'
+    ]
+    for pattern in dob_patterns:
+        dob_match = re.search(pattern, text_content, re.IGNORECASE)
+        if dob_match:
+            extracted['date_of_birth'] = dob_match.group(1)
             break
-    
-    age_match = re.search(r'(\d{1,3})\s*(y/?o|year|years?\s*old)', text_content, re.IGNORECASE)
-    if age_match:
-        extracted['age'] = int(age_match.group(1))
-    
-    gender_match = re.search(r'\b(male|female|[MF])\b', text_content, re.IGNORECASE)
-    if gender_match:
-        g = gender_match.group(1).upper()
-        extracted['gender'] = 'M' if g in ['M', 'MALE'] else 'F'
-    
-    dob_match = re.search(r'(?:DOB|Date of Birth|Birth Date)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})', text_content, re.IGNORECASE)
-    if dob_match:
-        extracted['date_of_birth'] = dob_match.group(1)
     
     blood_match = re.search(r'\b(A|B|AB|O)[+-]\b', text_content)
     if blood_match:
         extracted['blood_type'] = blood_match.group(0)
     
-    allergy_section = re.search(r'Allerg(?:y|ies)[:\s]+(.*?)(?:\n\n|\n[A-Z]|$)', text_content, re.IGNORECASE | re.DOTALL)
-    if allergy_section:
-        allergy_text = allergy_section.group(1)
-        common_allergens = ['Penicillin', 'Sulfa', 'Sulfonamides', 'Aspirin', 'Ibuprofen', 'Latex', 'Codeine', 'Morphine', 'Peanut', 'Shellfish']
-        for allergen in common_allergens:
-            if re.search(allergen, allergy_text, re.IGNORECASE):
-                severity = "HIGH"
-                if re.search(r'anaphyla|severe|critical', allergy_text, re.IGNORECASE):
-                    severity = "CRITICAL"
-                extracted['allergies'].append({
-                    "substance": allergen,
-                    "severity": severity,
-                    "reaction": "See medical record",
-                    "verified_date": datetime.now().strftime("%Y-%m-%d"),
-                    "source": f"Uploaded document: {filename}"
-                })
+    # Extract allergies - multiple patterns
+    allergy_patterns = [
+        r'Allerg(?:y|ies)[:\s]+(.*?)(?:\n\n|\nSocial History|\nMedications|\n[A-Z][a-z]+ History|$)',
+        r'Allergy[:\s]+([^\n]+)'
+    ]
+    
+    for pattern in allergy_patterns:
+        allergy_section = re.search(pattern, text_content, re.IGNORECASE | re.DOTALL)
+        if allergy_section:
+            allergy_text = allergy_section.group(1).strip()
+            
+            # Check for "No known allergies"
+            if re.search(r'no\s+known\s+allerg|none|nka|nkda', allergy_text, re.IGNORECASE):
+                break
+            
+            # Look for specific allergen names
+            common_allergens = ['Penicillin', 'Sulfa', 'Sulfonamides', 'Aspirin', 'Ibuprofen', 'Latex', 'Codeine', 'Morphine', 'Peanut', 'Shellfish']
+            for allergen in common_allergens:
+                if re.search(allergen, allergy_text, re.IGNORECASE):
+                    severity = "HIGH"
+                    if re.search(r'anaphyla|severe|critical', allergy_text, re.IGNORECASE):
+                        severity = "CRITICAL"
+                    
+                    # Try to extract reaction
+                    reaction = "See medical record"
+                    reaction_match = re.search(rf'{allergen}[:\s;]+(.*?)(?:\.|;|\n|$)', allergy_text, re.IGNORECASE)
+                    if reaction_match:
+                        reaction_text = reaction_match.group(1).strip()
+                        if len(reaction_text) > 5 and len(reaction_text) < 100:
+                            reaction = reaction_text
+                    
+                    extracted['allergies'].append({
+                        "substance": allergen,
+                        "severity": severity,
+                        "reaction": reaction,
+                        "verified_date": datetime.now().strftime("%Y-%m-%d"),
+                        "source": f"Uploaded document: {filename}"
+                    })
+            break
     
     med_patterns = [
         r'(?:Medication|Medications|Current Medications|Rx)[:\s]+(.*?)(?:\n\n|\n[A-Z]|$)',
@@ -786,22 +1024,30 @@ def extract_patient_data(text_content, filename):
             break
     
     condition_patterns = [
-        r'(?:History of Present Illness|HPI|Chief Complaint|Diagnosis|Assessment)[:\s]+(.*?)(?:\n\n|\n[A-Z]|$)',
-        r'(?:Medical History|Past Medical History|PMH)[:\s]+(.*?)(?:\n\n|\n[A-Z]|$)'
+        r'(?:Past Medical History|Medical History|PMH)[:\s]+(.*?)(?:\n\n|\nSocial History|\nAllerg|\nMedication|$)',
+        r'(?:History of Present Illness|HPI)[:\s]+(.*?)(?:\n\n|\nPast Medical|$)',
+        r'(?:Diagnosis|Assessment|Impression)[:\s]+(.*?)(?:\n\n|\nPlan|$)'
     ]
     conditions_found = []
-    common_conditions = ['Diabetes', 'Hypertension', 'HTN', 'Asthma', 'COPD', 'CHF', 'Heart Failure', 'Angina', 'Chest Pain', 'CAD', 'Coronary']
+    common_conditions = ['Diabetes', 'Hypertension', 'HTN', 'Asthma', 'COPD', 'CHF', 'Heart Failure', 'Angina', 'Chest Pain', 'CAD', 'Coronary', 'Peptic Ulcer']
+    
     for pattern in condition_patterns:
         section = re.search(pattern, text_content, re.IGNORECASE | re.DOTALL)
         if section:
             section_text = section.group(1)
             for condition in common_conditions:
-                if re.search(condition, section_text, re.IGNORECASE) and condition not in conditions_found:
+                if re.search(rf'\b{condition}\b', section_text, re.IGNORECASE) and condition not in conditions_found:
                     conditions_found.append(condition)
+                    
+                    # Try to extract date if available
+                    date_pattern = rf'{condition}.*?(\d{{1,2}}[/-]\d{{1,2}}[/-]\d{{2,4}}|\d{{4}})'
+                    date_match = re.search(date_pattern, section_text, re.IGNORECASE)
+                    diagnosed_date = date_match.group(1) if date_match else "See record"
+                    
                     extracted['conditions'].append({
                         "condition": condition,
                         "status": "ACTIVE",
-                        "diagnosed_date": "See record",
+                        "diagnosed_date": diagnosed_date,
                         "source": f"Uploaded document: {filename}"
                     })
     
@@ -817,9 +1063,116 @@ def extract_patient_data(text_content, filename):
     if temp_match:
         extracted['vital_signs']['temperature'] = temp_match.group(1)
     
+    chief_complaint_match = re.search(r'(?:Chief Complaint|CC)[:\s]+(.*?)(?:\n\n|\n[A-Z][a-z]+:|$)', text_content, re.IGNORECASE | re.DOTALL)
+    if chief_complaint_match:
+        extracted['chief_complaint'] = chief_complaint_match.group(1).strip()
+    
+    diagnosis_patterns = [
+        r'(?:Assessment|Diagnosis|Diagnoses)[:\s]+(.*?)(?:\n\n|\n[A-Z][a-z]+:|$)',
+        r'(?:Impression)[:\s]+(.*?)(?:\n\n|\n[A-Z][a-z]+:|$)'
+    ]
+    for pattern in diagnosis_patterns:
+        diag_match = re.search(pattern, text_content, re.IGNORECASE | re.DOTALL)
+        if diag_match:
+            diag_text = diag_match.group(1).strip()
+            diag_lines = [line.strip() for line in diag_text.split('\n') if line.strip() and len(line.strip()) > 3]
+            for line in diag_lines[:5]:
+                line_clean = re.sub(r'^[-\d.)\s]+', '', line).strip()
+                if line_clean:
+                    extracted['diagnoses'].append(line_clean)
+            break
+    
+    encounter_date_patterns = [
+        r'Date of (?:Examination|Visit|Encounter|Service)[:\s]+([A-Za-z]+\s+\d{1,2},\s+\d{4})',
+        r'Date of (?:Examination|Visit|Encounter|Service)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})',
+        r'(?:Encounter|Visit|Service) Date[:\s]+([A-Za-z]+\s+\d{1,2},\s+\d{4})',
+        r'(?:Encounter|Visit|Service) Date[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})',
+        r'^Date[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})',
+        r'Date[:\s]+([A-Za-z]+\s+\d{1,2},\s+\d{4})'
+    ]
+    for pattern in encounter_date_patterns:
+        date_match = re.search(pattern, text_content, re.IGNORECASE | re.MULTILINE)
+        if date_match:
+            extracted['encounter_date'] = date_match.group(1).strip()
+            break
+    
+    encounter_type_patterns = [
+        r'(?:History and Physical|H&P)',
+        r'(?:Progress Note)',
+        r'(?:Discharge Summary)',
+        r'(?:Consultation)',
+        r'(?:Emergency|ED|ER)',
+        r'(?:Operative Report)',
+        r'(?:Office Visit)',
+        r'(?:Follow[- ]up)'
+    ]
+    for pattern in encounter_type_patterns:
+        if re.search(pattern, text_content, re.IGNORECASE):
+            type_match = re.search(pattern, text_content, re.IGNORECASE)
+            if type_match:
+                extracted['encounter_type'] = type_match.group(0)
+                break
+    
+    if not extracted['encounter_type']:
+        if re.search(r'emergency|urgent|acute', text_content, re.IGNORECASE):
+            extracted['encounter_type'] = 'Emergency Department Visit'
+        elif re.search(r'admission|admit|hospital', text_content, re.IGNORECASE):
+            extracted['encounter_type'] = 'Inpatient Admission'
+        else:
+            extracted['encounter_type'] = 'Medical Encounter'
+    
+    provider_patterns = [
+        r'Attending (?:Physician|Doctor|Provider)[:\s]+Dr\.\s+([A-Z][a-z]+\s+[A-Z][a-z]+)',
+        r'(?:Physician|Doctor|Provider)[:\s]+Dr\.\s+([A-Z][a-z]+\s+[A-Z][a-z]+)',
+        r'(?:Seen by|Examined by)[:\s]+Dr\.\s+([A-Z][a-z]+\s+[A-Z][a-z]+)',
+        r'Dr\.\s+([A-Z][a-z]+\s+[A-Z][a-z]+)'
+    ]
+    for pattern in provider_patterns:
+        provider_match = re.search(pattern, text_content)
+        if provider_match:
+            provider_name = provider_match.group(1).strip()
+            if len(provider_name) > 3 and not provider_name.startswith('Ms') and not provider_name.startswith('Mr'):
+                extracted['provider'] = 'Dr. ' + provider_name
+                break
+    
+    if not extracted['provider']:
+        source_match = re.search(r'Referral Source[:\s]+([A-Za-z\s]+?)(?:\n|$)', text_content, re.IGNORECASE)
+        if source_match:
+            source = source_match.group(1).strip()
+            if source and source != 'Patient' and len(source) < 50:
+                extracted['facility'] = source
+    
+    facility_patterns = [
+        r'(?:Facility|Hospital|Clinic|Medical Center)[:\s]+([A-Z][A-Za-z\s]+(?:Hospital|Clinic|Medical Center|Health|Healthcare))',
+        r'([A-Z][A-Za-z\s]+(?:Hospital|Clinic|Medical Center|Health|Healthcare))',
+        r'(?:at|from)\s+([A-Z][A-Za-z\s]+(?:Hospital|Clinic|Medical Center|Health|Healthcare))'
+    ]
+    for pattern in facility_patterns:
+        facility_match = re.search(pattern, text_content)
+        if facility_match:
+            facility_name = facility_match.group(1).strip()
+            if len(facility_name) > 5 and len(facility_name) < 100:
+                extracted['facility'] = facility_name
+                break
+    
+    if not extracted['facility'] and re.search(r'emergency|ER|ED', text_content, re.IGNORECASE):
+        extracted['facility'] = 'Emergency Department'
+    
     if extracted['patient_name']:
         patient_id = f"PAT_{secrets.token_hex(3).upper()}"
         extracted['patient_id'] = patient_id
+        
+        # Build recent visit from encounter data
+        recent_visit = {
+            "visit_id": f"VIS_{secrets.token_hex(3).upper()}",
+            "date": extracted.get('encounter_date') or datetime.now().strftime("%Y-%m-%d"),
+            "type": extracted.get('encounter_type') or "Medical Encounter",
+            "provider": extracted.get('provider') or "Not specified",
+            "facility": extracted.get('facility') or "Not specified",
+            "chief_complaint": extracted.get('chief_complaint') or "See record",
+            "diagnosis": ", ".join(extracted.get('diagnoses', [])) if extracted.get('diagnoses') else "See record",
+            "notes": f"Uploaded from document: {filename}"
+        }
         
         extracted['patient_record'] = {
             "patient_id": patient_id,
@@ -858,7 +1211,7 @@ def extract_patient_data(text_content, filename):
                         "frequency": m['frequency'],
                         "route": "Oral",
                         "start_date": datetime.now().strftime("%Y-%m-%d"),
-                        "prescriber": "See record",
+                        "prescriber": extracted.get('provider') or "See record",
                         "indication": "See record",
                         "source_system": "UPLOAD",
                         "last_filled": datetime.now().strftime("%Y-%m-%d"),
@@ -866,8 +1219,15 @@ def extract_patient_data(text_content, filename):
                     } for m in extracted['medications']
                 ],
                 "recent_labs": [],
-                "recent_diagnoses": [],
-                "recent_visits": []
+                "recent_diagnoses": [
+                    {
+                        "diagnosis": diag,
+                        "date": extracted.get('encounter_date') or datetime.now().strftime("%Y-%m-%d"),
+                        "provider": extracted.get('provider') or "Not specified",
+                        "icd_code": "Pending"
+                    } for diag in extracted.get('diagnoses', [])
+                ],
+                "recent_visits": [recent_visit]
             }
         }
     
@@ -894,6 +1254,8 @@ app.router.add_get('/api/v1/patients/{patient_id}/emergency', get_emergency_data
 app.router.add_get('/api/v1/patients/{patient_id}/history', get_patient_history)
 app.router.add_get('/api/v1/patients/{patient_id}/ai-summary', get_ai_summary)
 app.router.add_get('/api/v1/pharmacy/patients/{patient_id}', get_pharmacy_view)
+app.router.add_get('/api/v1/files/browse', browse_files)
+app.router.add_get('/api/v1/files/{filename}', get_file_content)
 
 for route in list(app.router.routes()):
     cors.add(route)

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import DocumentViewer from './DocumentViewer'
 import FileAnalysisSummary from './FileAnalysisSummary'
 
 function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
+  const fileInputRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState({})
   const [uploadedFiles, setUploadedFiles] = useState([])
@@ -109,6 +110,10 @@ function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
     processFiles(files)
   }
 
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click()
+  }
+
   const processFiles = (files) => {
     setError(null)
     files.forEach(file => {
@@ -174,16 +179,26 @@ function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
             <div className="upload-icon">📁</div>
             <h4>Drag and drop files here</h4>
             <p>or</p>
-            <label className="btn-file-select">
+            <button 
+              type="button"
+              onClick={handleBrowseClick}
+              className="btn-file-select"
+              style={{ pointerEvents: 'auto' }}
+            >
               Browse Files
-              <input
-                type="file"
-                multiple
-                onChange={handleFileSelect}
-                style={{ display: 'none' }}
-                accept=".pdf,.doc,.docx,.txt,.jpg,.png,.jpeg"
-              />
-            </label>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              accept=".pdf,.doc,.docx,.txt,.jpg,.png,.jpeg"
+              style={{ 
+                position: 'absolute',
+                left: '-9999px',
+                top: '-9999px'
+              }}
+            />
             <p className="file-types">Supported: PDF, DOC, DOCX, TXT, JPG, PNG</p>
           </div>
         </div>
@@ -245,72 +260,235 @@ function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
 
         {extractedRecords.length > 0 && (
           <div className="extracted-records">
-            <h4>Extracted Patient Records</h4>
+            <h4>✅ Extracted Patient Records</h4>
             {extractedRecords.map((record, idx) => (
-              <div key={idx} className="extracted-record-card">
-                <div className="record-header">
-                  <h5>{record.patient_name || 'Unknown Patient'}</h5>
+              <div key={idx} className="extracted-record-card" style={{
+                backgroundColor: '#f8f9fa',
+                border: '2px solid #28a745',
+                borderRadius: '8px',
+                padding: '20px',
+                marginBottom: '15px'
+              }}>
+                <div className="record-header" style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '15px',
+                  paddingBottom: '10px',
+                  borderBottom: '2px solid #28a745'
+                }}>
+                  <h5 style={{ margin: 0, fontSize: '18px', color: '#2c3e50' }}>
+                    {record.patient_name || 'Unknown Patient'}
+                  </h5>
                   {record.patient_id && (
-                    <span className="patient-id-badge">ID: {record.patient_id}</span>
+                    <span style={{
+                      backgroundColor: '#28a745',
+                      color: 'white',
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      ID: {record.patient_id}
+                    </span>
                   )}
                 </div>
                 
-                <div className="record-grid">
-                  <div className="record-section">
-                    <h6>Demographics</h6>
-                    <p><strong>Age:</strong> {record.age || 'N/A'}</p>
-                    <p><strong>Gender:</strong> {record.gender || 'N/A'}</p>
-                    <p><strong>DOB:</strong> {record.date_of_birth || 'N/A'}</p>
-                    <p><strong>Blood Type:</strong> {record.blood_type || 'N/A'}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                  {/* Demographics */}
+                  <div style={{
+                    backgroundColor: 'white',
+                    padding: '15px',
+                    borderRadius: '6px',
+                    border: '1px solid #dee2e6'
+                  }}>
+                    <h6 style={{ 
+                      fontSize: '14px', 
+                      fontWeight: 'bold', 
+                      marginBottom: '10px',
+                      color: '#495057',
+                      borderBottom: '2px solid #3498db',
+                      paddingBottom: '5px'
+                    }}>
+                      👤 Demographics
+                    </h6>
+                    <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+                      <p style={{ margin: '0 0 5px 0' }}>
+                        <strong>Age:</strong> <span style={{ color: '#555' }}>{record.age || 'N/A'}</span>
+                      </p>
+                      <p style={{ margin: '0 0 5px 0' }}>
+                        <strong>Gender:</strong> <span style={{ color: '#555' }}>{record.gender || 'N/A'}</span>
+                      </p>
+                      <p style={{ margin: '0 0 5px 0' }}>
+                        <strong>DOB:</strong> <span style={{ color: '#555' }}>{record.date_of_birth || 'N/A'}</span>
+                      </p>
+                      <p style={{ margin: 0 }}>
+                        <strong>Blood Type:</strong> <span style={{ color: '#555' }}>{record.blood_type || 'N/A'}</span>
+                      </p>
+                    </div>
                   </div>
 
-                  {record.allergies && record.allergies.length > 0 && (
-                    <div className="record-section allergies-section">
-                      <h6>Allergies</h6>
-                      {record.allergies.map((allergy, aIdx) => (
-                        <div key={aIdx} className={`allergy-tag ${allergy.severity?.toLowerCase()}`}>
-                          {allergy.substance} ({allergy.severity})
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {record.medications && record.medications.length > 0 && (
-                    <div className="record-section">
-                      <h6>Medications</h6>
-                      {record.medications.map((med, mIdx) => (
-                        <p key={mIdx}>{med.name} - {med.dose}</p>
-                      ))}
-                    </div>
-                  )}
-
-                  {record.conditions && record.conditions.length > 0 && (
-                    <div className="record-section">
-                      <h6>Conditions</h6>
-                      {record.conditions.map((cond, cIdx) => (
-                        <p key={cIdx}>{cond.condition} ({cond.status})</p>
-                      ))}
-                    </div>
-                  )}
-
+                  {/* Vital Signs */}
                   {record.vital_signs && Object.keys(record.vital_signs).length > 0 && (
-                    <div className="record-section">
-                      <h6>Vital Signs</h6>
-                      {record.vital_signs.blood_pressure && (
-                        <p><strong>BP:</strong> {record.vital_signs.blood_pressure}</p>
-                      )}
-                      {record.vital_signs.pulse && (
-                        <p><strong>Pulse:</strong> {record.vital_signs.pulse}</p>
-                      )}
-                      {record.vital_signs.temperature && (
-                        <p><strong>Temp:</strong> {record.vital_signs.temperature}</p>
-                      )}
+                    <div style={{
+                      backgroundColor: 'white',
+                      padding: '15px',
+                      borderRadius: '6px',
+                      border: '1px solid #dee2e6'
+                    }}>
+                      <h6 style={{ 
+                        fontSize: '14px', 
+                        fontWeight: 'bold', 
+                        marginBottom: '10px',
+                        color: '#495057',
+                        borderBottom: '2px solid #e74c3c',
+                        paddingBottom: '5px'
+                      }}>
+                        💓 Vital Signs
+                      </h6>
+                      <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+                        {record.vital_signs.blood_pressure && (
+                          <p style={{ margin: '0 0 5px 0' }}>
+                            <strong>BP:</strong> <span style={{ color: '#555' }}>{record.vital_signs.blood_pressure}</span>
+                          </p>
+                        )}
+                        {record.vital_signs.pulse && (
+                          <p style={{ margin: '0 0 5px 0' }}>
+                            <strong>Pulse:</strong> <span style={{ color: '#555' }}>{record.vital_signs.pulse} bpm</span>
+                          </p>
+                        )}
+                        {record.vital_signs.temperature && (
+                          <p style={{ margin: 0 }}>
+                            <strong>Temp:</strong> <span style={{ color: '#555' }}>{record.vital_signs.temperature}°F</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Allergies */}
+                  {record.allergies && record.allergies.length > 0 && (
+                    <div style={{
+                      backgroundColor: '#ffe6e6',
+                      padding: '15px',
+                      borderRadius: '6px',
+                      border: '2px solid #e74c3c'
+                    }}>
+                      <h6 style={{ 
+                        fontSize: '14px', 
+                        fontWeight: 'bold', 
+                        marginBottom: '10px',
+                        color: '#c0392b',
+                        borderBottom: '2px solid #e74c3c',
+                        paddingBottom: '5px'
+                      }}>
+                        ⚠️ Allergies
+                      </h6>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {record.allergies.map((allergy, aIdx) => (
+                          <div key={aIdx} style={{
+                            backgroundColor: allergy.severity === 'CRITICAL' ? '#c0392b' : '#e74c3c',
+                            color: 'white',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 'bold'
+                          }}>
+                            {allergy.substance} ({allergy.severity})
+                            <div style={{ fontSize: '11px', fontWeight: 'normal', marginTop: '4px', opacity: 0.9 }}>
+                              {allergy.reaction}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Conditions */}
+                  {record.conditions && record.conditions.length > 0 && (
+                    <div style={{
+                      backgroundColor: 'white',
+                      padding: '15px',
+                      borderRadius: '6px',
+                      border: '1px solid #dee2e6'
+                    }}>
+                      <h6 style={{ 
+                        fontSize: '14px', 
+                        fontWeight: 'bold', 
+                        marginBottom: '10px',
+                        color: '#495057',
+                        borderBottom: '2px solid #9b59b6',
+                        paddingBottom: '5px'
+                      }}>
+                        🏥 Conditions
+                      </h6>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {record.conditions.map((cond, cIdx) => (
+                          <div key={cIdx} style={{
+                            backgroundColor: '#f0f0f0',
+                            padding: '6px 10px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            color: '#2c3e50'
+                          }}>
+                            <strong>{cond.condition}</strong>
+                            <span style={{ marginLeft: '6px', color: '#7f8c8d' }}>({cond.status})</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Medications */}
+                  {record.medications && record.medications.length > 0 && (
+                    <div style={{
+                      backgroundColor: 'white',
+                      padding: '15px',
+                      borderRadius: '6px',
+                      border: '1px solid #dee2e6'
+                    }}>
+                      <h6 style={{ 
+                        fontSize: '14px', 
+                        fontWeight: 'bold', 
+                        marginBottom: '10px',
+                        color: '#495057',
+                        borderBottom: '2px solid #f39c12',
+                        paddingBottom: '5px'
+                      }}>
+                        💊 Medications
+                      </h6>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {record.medications.map((med, mIdx) => (
+                          <div key={mIdx} style={{
+                            fontSize: '12px',
+                            padding: '4px 0',
+                            borderBottom: mIdx < record.medications.length - 1 ? '1px solid #f0f0f0' : 'none'
+                          }}>
+                            <strong style={{ color: '#2c3e50' }}>{med.name}</strong>
+                            <span style={{ marginLeft: '6px', color: '#7f8c8d' }}>{med.dose}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
 
-                <div className="record-actions">
-                  <p className="success-message">Patient added to system. You can now search for them.</p>
+                <div style={{
+                  marginTop: '15px',
+                  padding: '12px',
+                  backgroundColor: '#d4edda',
+                  border: '1px solid #c3e6cb',
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: '13px', 
+                    color: '#155724',
+                    fontWeight: 'bold'
+                  }}>
+                    ✓ Patient record successfully created and added to system. You can now search for this patient.
+                  </p>
                 </div>
               </div>
             ))}

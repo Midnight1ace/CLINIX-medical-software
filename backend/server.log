@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "c:\Users\zamee\OneDrive\Documentos\GitHub\AI-Patient-Record-Intelligence\backend\main_aiohttp.py", line 11, in <module>
+    import pdfplumber
+ModuleNotFoundError: No module named 'pdfplumber'

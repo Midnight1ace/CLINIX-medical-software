@@ -1,11 +1,14 @@
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from enum import Enum
 import secrets
 import uvicorn
+import os
+from pathlib import Path
 
 app = FastAPI(title="AI-Patient-Record-Intelligence API", version="1.0.0")
 
@@ -742,6 +745,65 @@ async def get_pharmacy_view(patient_id: str, session: dict = Depends(verify_toke
             for med in patient["dynamic_data"]["current_medications"]
         ]
     }
+
+@app.get("/api/v1/files/browse")
+async def browse_files(session: dict = Depends(verify_token)):
+    """List all files in the uploads directory"""
+    uploads_dir = Path(__file__).parent / "uploads"
+    
+    if not uploads_dir.exists():
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+    
+    files = []
+    try:
+        for file_path in uploads_dir.glob("*"):
+            if file_path.is_file():
+                stat_info = file_path.stat()
+                files.append({
+                    "name": file_path.name,
+                    "path": str(file_path.relative_to(uploads_dir)),
+                    "size": stat_info.st_size,
+                    "size_readable": f"{stat_info.st_size / 1024:.2f} KB" if stat_info.st_size < 1024*1024 else f"{stat_info.st_size / (1024*1024):.2f} MB",
+                    "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
+                    "type": "document"
+                })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading files: {str(e)}")
+    
+    files.sort(key=lambda x: x["modified"], reverse=True)
+    
+    return {
+        "total_files": len(files),
+        "files": files,
+        "upload_directory": str(uploads_dir)
+    }
+
+@app.get("/api/v1/files/{filename}")
+async def get_file_content(filename: str, session: dict = Depends(verify_token)):
+    """Get content of a specific file"""
+    uploads_dir = Path(__file__).parent / "uploads"
+    file_path = uploads_dir / filename
+    
+    # Security check: ensure file is within uploads directory
+    if not file_path.resolve().is_relative_to(uploads_dir.resolve()):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    if not file_path.is_file():
+        raise HTTPException(status_code=400, detail="Not a file")
+    
+    try:
+        content = file_path.read_text(encoding='utf-8', errors='ignore')
+        return {
+            "filename": filename,
+            "size": file_path.stat().st_size,
+            "content": content,
+            "modified": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
 
 if __name__ == "__main__":
     print("=" * 60)

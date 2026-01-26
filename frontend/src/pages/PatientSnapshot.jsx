@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import FileUpload from './FileUpload'
+import FileBrowser from './FileBrowser'
 
 function PatientSnapshot({ token, userInfo, patient, onBack, onEmergencyMode, onViewAISummary, onLogout }) {
+  const [showFileBrowser, setShowFileBrowser] = useState(false)
   if (!patient) {
     return <div>Loading...</div>
   }
@@ -17,6 +20,7 @@ function PatientSnapshot({ token, userInfo, patient, onBack, onEmergencyMode, on
           </div>
           <div className="user-info">
             <span>{userInfo.name} ({userInfo.role})</span>
+            <button onClick={() => setShowFileBrowser(true)} className="btn-secondary">📁 Browse Files</button>
             <button onClick={onLogout} className="btn-secondary">Logout</button>
           </div>
         </div>
@@ -150,6 +154,14 @@ function PatientSnapshot({ token, userInfo, patient, onBack, onEmergencyMode, on
           <FileUpload token={token} patientId={patient.patient_id} />
         </div>
       </div>
+
+      {showFileBrowser && (
+        <FileBrowser
+          token={token}
+          onFileSelect={() => setShowFileBrowser(false)}
+          onClose={() => setShowFileBrowser(false)}
+        />
+      )}
     </div>
   )
 }
