@@ -9,11 +9,6 @@ services:
     envVars:
       - key: ENVIRONMENT
         value: production
-      - key: BACKEND_PORT
-        value: 8000
-      - key: CORS_ORIGIN
-        scope: shared
-    healthCheckPath: /api/v1/health
     autoDeploy: true
 
   - type: web
@@ -22,18 +17,12 @@ services:
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
-    startCommand: npm run preview
+    startCommand: npm run preview -- --host 0.0.0.0
     envVars:
       - key: VITE_API_URL
         fromService:
           type: web
           name: ai-patient-backend
-          property: url
+          property: hostport
+          envVarKey: VITE_API_URL
     autoDeploy: true
-    routes:
-      - type: redirect
-        source: /
-        destination: /
-      - type: rewrite
-        source: /*
-        destination: /index.html
