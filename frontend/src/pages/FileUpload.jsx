@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import DocumentViewer from './DocumentViewer'
+import FileAnalysisSummary from './FileAnalysisSummary'
 
-function FileUpload({ token, patientId, onUploadComplete }) {
+function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState({})
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [error, setError] = useState(null)
   const [viewingDocument, setViewingDocument] = useState(null)
   const [extractedRecords, setExtractedRecords] = useState([])
+  const [analyzingFile, setAnalyzingFile] = useState(null)
 
   const handleDragEnter = (e) => {
     e.preventDefault()
@@ -125,8 +127,35 @@ function FileUpload({ token, patientId, onUploadComplete }) {
     })
   }
 
+  const handleAnalyzeFile = (file) => {
+    setAnalyzingFile(file)
+    if (onAnalyzeFile) {
+      onAnalyzeFile(file)
+    }
+  }
+
   return (
     <>
+      {analyzingFile && (
+        <FileAnalysisSummary
+          file={analyzingFile}
+          token={token}
+          onClose={() => setAnalyzingFile(null)}
+          onViewSource={(data) => {
+            setViewingDocument({
+              name: data.file.name,
+              type: data.file.type?.includes('pdf') ? 'pdf' : 'text',
+              size: data.file.size,
+              timestamp: data.file.timestamp,
+              preview: data.file.rawText || data.file.extractedData?.raw_text || 'No content available',
+              previewUrl: null,
+              searchTerm: data.searchTerm,
+              highlightData: data.highlightData
+            })
+            setAnalyzingFile(null)
+          }}
+        />
+      )}
       {viewingDocument && (
         <DocumentViewer
           document={viewingDocument}
@@ -192,13 +221,22 @@ function FileUpload({ token, patientId, onUploadComplete }) {
                       {(file.size / 1024).toFixed(2)} KB | {file.timestamp}
                     </p>
                   </div>
-                  <button
-                    onClick={() => viewFile(file)}
-                    className="btn-view-file"
-                    title="View and search document"
-                  >
-                    🔍
-                  </button>
+                  <div className="file-actions">
+                    <button
+                      onClick={() => handleAnalyzeFile(file)}
+                      className="btn-analyze-file"
+                      title="Analyze with AI and view summary"
+                    >
+                      🔍
+                    </button>
+                    <button
+                      onClick={() => viewFile(file)}
+                      className="btn-view-file"
+                      title="View and search document"
+                    >
+                      📄
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

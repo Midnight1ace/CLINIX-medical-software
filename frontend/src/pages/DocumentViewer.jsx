@@ -1,10 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 function DocumentViewer({ document, onClose }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [currentResultIndex, setCurrentResultIndex] = useState(0)
   const [highlightedText, setHighlightedText] = useState('')
+
+  // Initialize search if document has a searchTerm (from FileAnalysisSummary)
+  useEffect(() => {
+    if (document?.searchTerm) {
+      handleSearch(document.searchTerm)
+    }
+  }, [document?.searchTerm])
 
   const handleSearch = (value) => {
     setSearchTerm(value)

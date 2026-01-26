@@ -3,3 +3,4 @@ uvicorn[standard]==0.32.1
 pydantic==2.10.3
 python-multipart==0.0.18
 annotated-types==0.7.0
+reportlab==4.2.5

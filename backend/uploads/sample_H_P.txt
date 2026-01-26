@@ -1,0 +1,84 @@
+**History and Physical Examination**
+
+**Patient Demographics:**
+- Name: John Doe
+- Date of Birth: January 1, 1980 (Age: 46)
+- Gender: Male
+- Medical Record Number: 123456789
+- Date of Examination: January 26, 2026
+- Attending Physician: Dr. Jane Smith
+
+**Chief Complaint:**
+Chest pain for 2 hours.
+
+**History of Present Illness:**
+Mr. Doe is a 46-year-old male who presents to the emergency department with sudden onset of substernal chest pain that began 2 hours ago while at rest. The pain is described as sharp, 8/10 in intensity, radiating to the left arm and jaw. Associated symptoms include shortness of breath, nausea, and diaphoresis. He denies any recent trauma, fever, or cough. He has a history of hypertension and smoking. He took aspirin 325 mg at home without relief.
+
+**Past Medical History:**
+- Hypertension (diagnosed 5 years ago, on lisinopril 10 mg daily)
+- No known allergies
+- No previous surgeries
+- No hospitalizations
+
+**Social History:**
+- Smoker: 1 pack per day for 20 years
+- Alcohol: Occasional
+- Occupation: Office worker
+- No illicit drug use
+
+**Family History:**
+- Father: Died of myocardial infarction at age 60
+- Mother: Alive, hypertension
+- No siblings
+
+**Review of Systems:**
+- Constitutional: No fever, chills, or weight loss
+- Cardiovascular: Chest pain as above, no palpitations
+- Respiratory: Shortness of breath, no cough or hemoptysis
+- Gastrointestinal: Nausea, no vomiting or diarrhea
+- Genitourinary: No dysuria or frequency
+- Neurological: No headache, dizziness, or weakness
+- Musculoskeletal: No joint pain or swelling
+
+**Physical Examination:**
+
+**Vital Signs:**
+- Blood Pressure: 160/95 mmHg
+- Heart Rate: 95 bpm
+- Respiratory Rate: 20/min
+- Temperature: 98.6°F
+- Oxygen Saturation: 96% on room air
+
+**General:**
+Well-developed male in moderate distress due to chest pain.
+
+**HEENT:**
+Normocephalic, atraumatic. Pupils equal, round, reactive to light and accommodation. No nasal discharge. Oropharynx clear.
+
+**Neck:**
+No jugular venous distention. Carotid pulses 2+ bilaterally, no bruits.
+
+**Cardiovascular:**
+Regular rate and rhythm. No murmurs, rubs, or gallops. Point of maximal impulse normal.
+
+**Respiratory:**
+Lungs clear to auscultation bilaterally. No wheezes, rales, or rhonchi.
+
+**Abdomen:**
+Soft, non-tender, non-distended. Normoactive bowel sounds. No organomegaly.
+
+**Extremities:**
+No clubbing, cyanosis, or edema. Peripheral pulses 2+.
+
+**Neurological:**
+Alert and oriented x3. Cranial nerves II-XII intact. Strength 5/5 in all extremities. Sensation intact.
+
+**Assessment:**
+46-year-old male with acute chest pain, likely acute coronary syndrome given risk factors and presentation.
+
+**Plan:**
+1. Obtain ECG, cardiac enzymes (troponin), and chest X-ray.
+2. Start aspirin 325 mg, nitroglycerin sublingual, oxygen, and morphine for pain.
+3. Admit to cardiac care unit for monitoring.
+4. Consult cardiology for possible cardiac catheterization.
+5. Lifestyle modifications: Smoking cessation, blood pressure control.
