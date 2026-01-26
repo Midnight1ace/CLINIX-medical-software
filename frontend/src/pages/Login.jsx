@@ -1,6 +1,9 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import LanguageSelector from '../components/LanguageSelector'
 
 function Login({ onLogin }) {
+  const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -20,40 +23,43 @@ function Login({ onLogin }) {
     setLoading(false)
 
     if (!result.success) {
-      setError('Invalid credentials. Please try again.')
+      setError(t('login.invalidCredentials'))
     }
   }
 
   return (
     <div className="login-container">
+      <div className="language-selector-top">
+        <LanguageSelector />
+      </div>
       <div className="login-card">
         <div className="login-header">
-          <h1>AI Patient Record Intelligence</h1>
-          <p>Hospital Clinical Information System</p>
+          <h1>{t('app.title')}</h1>
+          <p>{t('app.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">{t('login.username')}</label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter username"
+              placeholder={t('login.usernamePlaceholder')}
               required
               autoFocus
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t('login.password')}</label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
+              placeholder={t('login.passwordPlaceholder')}
               required
             />
           </div>
@@ -61,7 +67,7 @@ function Login({ onLogin }) {
           {error && <div className="error-message">{error}</div>}
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? t('login.loggingIn') : t('login.login')}
           </button>
         </form>
 

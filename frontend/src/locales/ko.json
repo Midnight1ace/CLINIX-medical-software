@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "AI 환자 기록 인텔리전스",
+    "subtitle": "병원 임상 정보 시스템"
+  },
+  "login": {
+    "username": "사용자 이름",
+    "password": "비밀번호",
+    "login": "로그인",
+    "loggingIn": "로그인 중...",
+    "invalidCredentials": "잘못된 자격 증명입니다. 다시 시도해 주세요.",
+    "usernamePlaceholder": "사용자 이름 입력",
+    "passwordPlaceholder": "비밀번호 입력"
+  },
+  "navigation": {
+    "search": "검색",
+    "upload": "업로드",
+    "emergency": "응급",
+    "logout": "로그아웃",
+    "fileBrowser": "파일 브라우저"
+  },
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "success": "성공",
+    "cancel": "취소",
+    "save": "저장",
+    "delete": "삭제",
+    "edit": "편집",
+    "view": "보기",
+    "back": "뒤로",
+    "next": "다음",
+    "previous": "이전",
+    "close": "닫기",
+    "open": "열기"
+  },
+  "language": {
+    "select": "언어 선택",
+    "english": "English",
+    "arabic": "العربية",
+    "japanese": "日本語",
+    "korean": "한국어"
+  }
+}

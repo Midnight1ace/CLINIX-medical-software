@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import DocumentViewer from './DocumentViewer'
 import FileAnalysisSummary from './FileAnalysisSummary'
+import FileBrowser from './FileBrowser'
 
 function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
   const fileInputRef = useRef(null)
@@ -11,6 +12,7 @@ function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
   const [viewingDocument, setViewingDocument] = useState(null)
   const [extractedRecords, setExtractedRecords] = useState([])
   const [analyzingFile, setAnalyzingFile] = useState(null)
+  const [showFileBrowser, setShowFileBrowser] = useState(false)
 
   const handleDragEnter = (e) => {
     e.preventDefault()
@@ -139,6 +141,19 @@ function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
     }
   }
 
+  const handleFileSelectFromBrowser = (fileData) => {
+    // When a file is selected from browser, view it
+    setViewingDocument({
+      name: fileData.name,
+      type: fileData.name.toLowerCase().includes('.pdf') ? 'pdf' : 'text',
+      size: fileData.size,
+      timestamp: new Date(fileData.modified).toLocaleString(),
+      preview: fileData.content,
+      previewUrl: null
+    })
+    setShowFileBrowser(false)
+  }
+
   return (
     <>
       {analyzingFile && (
@@ -179,14 +194,24 @@ function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
             <div className="upload-icon">📁</div>
             <h4>Drag and drop files here</h4>
             <p>or</p>
-            <button 
-              type="button"
-              onClick={handleBrowseClick}
-              className="btn-file-select"
-              style={{ pointerEvents: 'auto' }}
-            >
-              Browse Files
-            </button>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={handleBrowseClick}
+                className="btn-file-select"
+                style={{ pointerEvents: 'auto' }}
+              >
+                📁 Browse Existing Files
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn-file-select"
+                style={{ pointerEvents: 'auto', backgroundColor: '#28a745' }}
+              >
+                📤 Upload New Files
+              </button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"

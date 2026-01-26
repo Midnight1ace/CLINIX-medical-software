@@ -68,8 +68,44 @@ function AISummary({ token, patient, onBack }) {
             <div style={{ display: 'flex', gap: '20px', marginTop: '10px', fontSize: '13px' }}>
               <span><strong>Patient:</strong> {summaryData.patient_name}</span>
               <span><strong>Generated:</strong> {new Date(summaryData.generated_at).toLocaleString()}</span>
+              {summaryData.ai_model && (
+                <span><strong>AI Model:</strong> {summaryData.ai_model}</span>
+              )}
             </div>
           </div>
+
+          {/* Gemini AI Generated Summary */}
+          {summaryData.ai_generated_summary && (
+            <div style={{
+              backgroundColor: '#f0f8ff',
+              border: '2px solid #3498db',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{ 
+                fontSize: '18px', 
+                fontWeight: 'bold', 
+                marginBottom: '15px',
+                color: '#2c3e50',
+                borderBottom: '2px solid #3498db',
+                paddingBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                🤖 AI-Generated Clinical Summary
+              </h2>
+              <div style={{
+                fontSize: '14px',
+                lineHeight: '1.8',
+                color: '#34495e',
+                whiteSpace: 'pre-wrap'
+              }}>
+                {summaryData.ai_generated_summary}
+              </div>
+            </div>
+          )}
 
           {/* Clinical Overview Box */}
           <div className="summary-box" style={{

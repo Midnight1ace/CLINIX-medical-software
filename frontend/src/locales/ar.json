@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "ذكاء السجلات الطبية بالذكاء الاصطناعي",
+    "subtitle": "نظام المعلومات السريرية للمستشفى"
+  },
+  "login": {
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "login": "تسجيل الدخول",
+    "loggingIn": "جاري تسجيل الدخول...",
+    "invalidCredentials": "بيانات الدخول غير صحيحة. يرجى المحاولة مرة أخرى.",
+    "usernamePlaceholder": "أدخل اسم المستخدم",
+    "passwordPlaceholder": "أدخل كلمة المرور"
+  },
+  "navigation": {
+    "search": "البحث",
+    "upload": "رفع",
+    "emergency": "طوارئ",
+    "logout": "تسجيل الخروج",
+    "fileBrowser": "متصفح الملفات"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجح",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "view": "عرض",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "close": "إغلاق",
+    "open": "فتح"
+  },
+  "language": {
+    "select": "اختر اللغة",
+    "english": "English",
+    "arabic": "العربية",
+    "japanese": "日本語",
+    "korean": "한국어"
+  }
+}

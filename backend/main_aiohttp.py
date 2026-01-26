@@ -13,6 +13,23 @@ import pdfplumber
 # noinspection PyUnresolvedReference  
 import aiohttp_cors
 
+# Import Gemini AI service
+from gemini_service import (
+    generate_ai_summary,
+    analyze_document_with_ai,
+    suggest_data_corrections,
+    enhance_search_results,
+    generate_emergency_insights,
+    validate_medication_interactions
+)
+
+# Import Fanar API service
+from fanar_service import (
+    get_patient_data,
+    search_patients,
+    get_patient_records
+)
+
 class UserRole(str, Enum):
     DOCTOR = "DOCTOR"
     PHARMACIST = "PHARMACIST"
@@ -436,6 +453,43 @@ async def search_patients(request):
         "results": results
     })
 
+async def search_fanar_patients(request):
+    session = verify_token(request)
+    query = request.query.get('q', '')
+
+    if not query:
+        return web.json_response({"error": "Query parameter 'q' is required"}, status=400)
+
+    fanar_results = search_patients(query)
+
+    if 'error' in fanar_results:
+        return web.json_response(fanar_results, status=500)
+
+    return web.json_response(fanar_results)
+
+async def get_fanar_patient_data(request):
+    session = verify_token(request)
+    patient_id = request.match_info['patient_id']
+
+    fanar_data = get_patient_data(patient_id)
+
+    if 'error' in fanar_data:
+        return web.json_response(fanar_data, status=500)
+
+    return web.json_response(fanar_data)
+
+async def get_fanar_patient_records(request):
+    session = verify_token(request)
+    patient_id = request.match_info['patient_id']
+    record_type = request.query.get('type')
+
+    fanar_records = get_patient_records(patient_id, record_type)
+
+    if 'error' in fanar_records:
+        return web.json_response(fanar_records, status=500)
+
+    return web.json_response(fanar_records)
+
 async def get_patient_snapshot(request):
     session = verify_token(request)
     patient_id = request.match_info['patient_id']
@@ -523,6 +577,19 @@ async def get_emergency_data(request):
         "emergency_mode": True,
         "timestamp": datetime.now().isoformat()
     })
+    
+    # Add AI-generated emergency insights
+    emergency_data = response_data
+    ai_insights = generate_emergency_insights(emergency_data)
+    if ai_insights:
+        response_data["ai_insights"] = ai_insights
+    
+    # Check for medication interactions
+    med_warnings = validate_medication_interactions(emergency_data.get('current_medications', []))
+    if med_warnings and (med_warnings.get('interactions') or med_warnings.get('warnings')):
+        response_data["medication_warnings"] = med_warnings
+    
+    return web.json_response(response_data)
 
 async def get_patient_history(request):
     session = verify_token(request)
@@ -567,11 +634,16 @@ async def get_ai_summary(request):
     
     patient = DEMO_PATIENTS[patient_id]
     
+    # Generate AI-powered summary using Gemini
+    ai_result = generate_ai_summary(patient)
+    
     return web.json_response({
         "patient_id": patient_id,
         "patient_name": patient["demographics"]["name"],
         "generated_at": datetime.now().isoformat(),
         "disclaimer": "⚠️ AI-generated summary for clinical support only. Always verify against original documents.",
+        "ai_generated_summary": ai_result.get('summary_text', ''),
+        "ai_model": ai_result.get('model', 'fallback'),
         "summary": {
             "conditions": [
                 {
@@ -843,6 +915,15 @@ async def upload_file(request):
             text_content = ""
         
         extracted_data = extract_patient_data(text_content, filename)
+        
+        # Try AI-enhanced extraction if available
+        ai_extracted = analyze_document_with_ai(text_content, filename)
+        if ai_extracted:
+            print(f"✓ AI extraction successful")
+            # Merge AI extraction with regex extraction (AI takes precedence)
+            for key, value in ai_extracted.items():
+                if value and (not extracted_data.get(key) or key in ['diagnoses', 'conditions', 'medications', 'allergies']):
+                    extracted_data[key] = value
         
         print(f"=== EXTRACTED DATA ===")
         print(f"Date: {extracted_data.get('encounter_date')}")
@@ -1248,6 +1329,9 @@ app.router.add_get('/health', health_check)
 app.router.add_post('/api/v1/auth/login', login)
 app.router.add_post('/api/v1/auth/logout', logout)
 app.router.add_get('/api/v1/patients/search', search_patients)
+app.router.add_get('/api/v1/fanar/patients/search', search_fanar_patients)
+app.router.add_get('/api/v1/fanar/patients/{patient_id}', get_fanar_patient_data)
+app.router.add_get('/api/v1/fanar/patients/{patient_id}/records', get_fanar_patient_records)
 app.router.add_post('/api/v1/patients/upload', upload_file)
 app.router.add_get('/api/v1/patients/{patient_id}/snapshot', get_patient_snapshot)
 app.router.add_get('/api/v1/patients/{patient_id}/emergency', get_emergency_data)

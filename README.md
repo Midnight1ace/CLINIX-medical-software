@@ -27,6 +27,7 @@ The system consolidates fragmented patient records from multiple sources (hospit
 - ✅ **AI Summary**: Structured conditions, medications, allergies with confidence indicators
 - ✅ **Role-Based Views**: Customized data emphasis for doctors vs pharmacists
 - ✅ **Critical Alerts**: Prominent warning banners for allergies and drug interactions
+- ✅ **File Upload**: Drag and drop or browse to upload patient records (PDF, DOC, DOCX, TXT, JPG, PNG)
 
 ### Technical Stack
 - **Backend**: Python 3.14, aiohttp (async web framework)

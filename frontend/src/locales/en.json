@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "AI Patient Record Intelligence",
+    "subtitle": "Hospital Clinical Information System"
+  },
+  "login": {
+    "username": "Username",
+    "password": "Password",
+    "login": "Login",
+    "loggingIn": "Logging in...",
+    "invalidCredentials": "Invalid credentials. Please try again.",
+    "usernamePlaceholder": "Enter username",
+    "passwordPlaceholder": "Enter password"
+  },
+  "navigation": {
+    "search": "Search",
+    "upload": "Upload",
+    "emergency": "Emergency",
+    "logout": "Logout",
+    "fileBrowser": "File Browser"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "open": "Open"
+  },
+  "language": {
+    "select": "Select Language",
+    "english": "English",
+    "arabic": "العربية",
+    "japanese": "日本語",
+    "korean": "한국어"
+  }
+}
