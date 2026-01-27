@@ -1,4 +1,4 @@
-# AI-Patient-Record-Intelligence
+# CLINIX-Medical-Software
 
 **A doctor-first, safety-critical system that turns fragmented patient records into instant, reliable clinical clarity—when every second matters.**
 
@@ -6,7 +6,7 @@
 
 ## Description
 
-AI-Patient-Record-Intelligence is a hospital clinical information system designed around how doctors actually work. It provides instant access to critical patient data with:
+CLINIX-Medical-Software is a hospital clinical information system designed around how doctors actually work. It provides instant access to critical patient data with:
 
 - **Zero Learning Curve**: Intuitive layout with no training needed
 - **Safety-First Design**: Critical allergy alerts impossible to miss
@@ -269,7 +269,7 @@ Expected response:
 ## Project Structure
 
 ```
-AI-Patient-Record-Intelligence/
+CLINIX-medical-software/
 ├───│ 
 │   ├── backend/
 │   │   ├── venv/                 # Virtual environment
@@ -439,7 +439,7 @@ SOFTWARE.
 ## Contact & Support
 
 For questions, issues, or contributions:
-- **Issues**: [GitHub Issues](https://github.com/yourusername/AI-Patient-Record-Intelligence/issues)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/CLINIX-medical-software/issues)
 - **Documentation**: See `README.md` in project root for full architecture
 - **Quick Start**: See `QUICKSTART.md` for abbreviated setup guide
 
