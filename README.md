@@ -49,8 +49,8 @@ Before you begin, ensure you have:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/AI-Patient-Record-Intelligence.git
-cd AI-Patient-Record-Intelligence
+git clone https://github.com/yourusername/CLINIX-medical-software.git
+cd CLINIX-medical-software
 ```
 
 ### 2. Backend Setup
@@ -108,7 +108,7 @@ venv\Scripts\python.exe main_aiohttp.py
 **Expected Output:**
 ```
 ============================================================
-AI-Patient-Record-Intelligence Backend Server
+CLINIX-medical-software Backend Server
 ============================================================
 
 Starting server on http://localhost:8000
@@ -395,8 +395,8 @@ Response: {"message": "Logged out successfully"}
 ## Credits
 
 ### Development Team
-- System Architecture & Backend: AI-Patient-Record-Intelligence Team
-- Frontend UI/UX: AI-Patient-Record-Intelligence Team
+- System Architecture & Backend: Axion Team
+- Frontend UI/UX: Axion Team
 - Clinical Workflow Consulting: Healthcare professionals
 
 ### Technologies Used
@@ -414,7 +414,7 @@ This project was designed with input from healthcare professionals to address re
 
 **MIT License**
 
-Copyright (c) 2026 AI-Patient-Record-Intelligence Project
+Copyright (c) 2026 CLINIX-medical-software Project
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
