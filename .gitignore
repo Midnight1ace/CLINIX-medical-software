@@ -1,0 +1,5 @@
+# Environment files (project root)
+.env
+
+# Backend env files (explicit)
+backend/.env

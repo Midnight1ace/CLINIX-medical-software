@@ -34,6 +34,9 @@ function FileUpload({ token, patientId, onUploadComplete, onAnalyzeFile }) {
   const uploadFile = async (file) => {
     const formData = new FormData()
     formData.append('file', file)
+    if (patientId) {
+      formData.append('patient_id', patientId)
+    }
 
     try {
       setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))

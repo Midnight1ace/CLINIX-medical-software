@@ -5,12 +5,13 @@ const API_BASE = 'http://localhost:8000'
 function AISummary({ token, patient, onBack }) {
   const [summaryData, setSummaryData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [advancedMode, setAdvancedMode] = useState(false)
 
   useEffect(() => {
     const loadAISummary = async () => {
       try {
         const response = await fetch(
-          `${API_BASE}/api/v1/patients/${patient.patient_id}/ai-summary`,
+          `${API_BASE}/api/v1/patients/${patient.patient_id}/ai-summary${advancedMode ? '?mode=advanced' : ''}`,
           {
             headers: { 'Authorization': `Bearer ${token}` }
           }
@@ -30,7 +31,7 @@ function AISummary({ token, patient, onBack }) {
     }
 
     loadAISummary()
-  }, [token, patient.patient_id])
+  }, [token, patient.patient_id, advancedMode])
 
   if (loading) {
     return (
@@ -55,6 +56,14 @@ function AISummary({ token, patient, onBack }) {
           <div className="header-left">
             <button onClick={onBack} className="btn-secondary">← Back to Patient</button>
             <h1>AI-Generated Clinical Summary</h1>
+          </div>
+          <div className="header-right">
+            <button
+              onClick={() => setAdvancedMode(!advancedMode)}
+              className="btn-secondary"
+            >
+              {advancedMode ? 'Advanced: On' : 'Advanced: Off'}
+            </button>
           </div>
         </div>
       </header>
@@ -104,6 +113,43 @@ function AISummary({ token, patient, onBack }) {
               }}>
                 {summaryData.ai_generated_summary}
               </div>
+            </div>
+          )}
+
+          {summaryData.advanced && (
+            <div style={{
+              backgroundColor: '#fff9e6',
+              border: '2px solid #f1c40f',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{
+                fontSize: '18px',
+                fontWeight: 'bold',
+                marginBottom: '15px',
+                color: '#8e6f00',
+                borderBottom: '2px solid #f1c40f',
+                paddingBottom: '8px'
+              }}>
+                Advanced AI Insights
+              </h2>
+              {summaryData.advanced.interaction_analysis && (
+                <div style={{ marginBottom: '15px', fontSize: '14px' }}>
+                  <strong>Medication Interactions</strong>
+                  <pre style={{ whiteSpace: 'pre-wrap', marginTop: '8px' }}>
+                    {JSON.stringify(summaryData.advanced.interaction_analysis, null, 2)}
+                  </pre>
+                </div>
+              )}
+              {summaryData.advanced.emergency_insights && (
+                <div style={{ fontSize: '14px' }}>
+                  <strong>Emergency Insights</strong>
+                  <div style={{ whiteSpace: 'pre-wrap', marginTop: '8px' }}>
+                    {summaryData.advanced.emergency_insights}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

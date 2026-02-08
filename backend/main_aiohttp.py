@@ -1,4 +1,5 @@
 from aiohttp import web
+import asyncio
 import secrets
 import json
 import os
@@ -7,11 +8,13 @@ from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 
-# noinspection PyUnresolvedReference
-import pdfplumber
-
 # noinspection PyUnresolvedReference  
 import aiohttp_cors
+
+# Local utilities
+from document_processing import extract_document_text
+from realtime import EventBus
+from storage import InMemoryStorage, PostgresStorage
 
 # Import Gemini AI service
 from gemini_service import (
@@ -26,7 +29,7 @@ from gemini_service import (
 # Import Fanar API service
 from fanar_service import (
     get_patient_data,
-    search_patients,
+    search_patients as fanar_search_patients,
     get_patient_records
 )
 
@@ -352,20 +355,53 @@ DEMO_PATIENTS = {
     }
 }
 
-def verify_token(request):
+
+async def init_app(app):
+    db_url = os.getenv("DATABASE_URL", "").strip()
+    enable_seed = os.getenv("ENABLE_DB_SEED", "true").lower() in ("1", "true", "yes")
+
+    if db_url:
+        storage = PostgresStorage(db_url)
+        await storage.connect()
+        await storage.init()
+        if enable_seed:
+            await storage.seed_demo_data(DEMO_PATIENTS)
+    else:
+        storage = InMemoryStorage(DEMO_PATIENTS)
+        await storage.connect()
+        await storage.init()
+        if enable_seed:
+            await storage.seed_demo_data(DEMO_PATIENTS)
+
+    app["storage"] = storage
+    app["events"] = EventBus()
+
+
+async def cleanup_app(app):
+    storage = app.get("storage")
+    if storage:
+        await storage.close()
+
+def verify_token(request, allow_query_token=False):
     auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
+    token = None
+
+    if auth_header and auth_header.startswith('Bearer '):
+        token = auth_header.replace('Bearer ', '')
+    elif allow_query_token:
+        token = request.query.get('token')
+
+    if not token:
         raise web.HTTPUnauthorized(text="Missing or invalid authorization")
-    
-    token = auth_header.replace('Bearer ', '')
+
     if token not in active_sessions:
         raise web.HTTPUnauthorized(text="Invalid or expired token")
-    
+
     session = active_sessions[token]
     if datetime.now() > session["expires_at"]:
         del active_sessions[token]
         raise web.HTTPUnauthorized(text="Token expired")
-    
+
     return session
 
 async def root(request):
@@ -377,6 +413,47 @@ async def health_check(request):
         "timestamp": datetime.now().isoformat(),
         "version": "1.0.0"
     })
+
+async def sync_stream(request):
+    session = verify_token(request, allow_query_token=True)
+    patient_id_filter = request.query.get("patient_id")
+    events = request.app["events"]
+
+    queue = await events.subscribe()
+
+    response = web.StreamResponse(
+        status=200,
+        headers={
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    )
+    await response.prepare(request)
+
+    await response.write(b"event: ready\n")
+    await response.write(b"data: {\"status\":\"connected\"}\n\n")
+
+    try:
+        while True:
+            try:
+                event = await asyncio.wait_for(queue.get(), timeout=15)
+            except asyncio.TimeoutError:
+                await response.write(b": keep-alive\n\n")
+                continue
+
+            if patient_id_filter and event.get("patient_id") != patient_id_filter:
+                continue
+
+            payload = json.dumps(event, default=str)
+            await response.write(f"event: {event.get('type', 'update')}\n".encode("utf-8"))
+            await response.write(f"data: {payload}\n\n".encode("utf-8"))
+    except (asyncio.CancelledError, ConnectionResetError, BrokenPipeError):
+        pass
+    finally:
+        await events.unsubscribe(queue)
+
+    return response
 
 async def login(request):
     data = await request.json()
@@ -418,33 +495,9 @@ async def search_patients(request):
     session = verify_token(request)
     method = request.query.get('method')
     value = request.query.get('value')
-    
-    results = []
-    
-    if method == "PATIENT_ID" and value in DEMO_PATIENTS:
-        patient = DEMO_PATIENTS[value]
-        results.append({
-            "patient_id": patient["patient_id"],
-            "name": patient["demographics"]["name"],
-            "date_of_birth": patient["demographics"]["date_of_birth"],
-            "age": patient["demographics"]["age"],
-            "gender": patient["demographics"]["gender"],
-            "match_score": 1.0,
-            "match_reason": "Exact Patient ID match"
-        })
-    elif method == "PARTIAL_NAME":
-        search_term = value.lower()
-        for patient_id, patient in DEMO_PATIENTS.items():
-            if search_term in patient["demographics"]["name"].lower():
-                results.append({
-                    "patient_id": patient["patient_id"],
-                    "name": patient["demographics"]["name"],
-                    "date_of_birth": patient["demographics"]["date_of_birth"],
-                    "age": patient["demographics"]["age"],
-                    "gender": patient["demographics"]["gender"],
-                    "match_score": 0.9,
-                    "match_reason": "Name match"
-                })
+
+    storage = request.app["storage"]
+    results = await storage.search_patients(method, value)
     
     return web.json_response({
         "search_method": method,
@@ -460,7 +513,7 @@ async def search_fanar_patients(request):
     if not query:
         return web.json_response({"error": "Query parameter 'q' is required"}, status=400)
 
-    fanar_results = search_patients(query)
+    fanar_results = fanar_search_patients(query)
 
     if 'error' in fanar_results:
         return web.json_response(fanar_results, status=500)
@@ -493,11 +546,11 @@ async def get_fanar_patient_records(request):
 async def get_patient_snapshot(request):
     session = verify_token(request)
     patient_id = request.match_info['patient_id']
-    
-    if patient_id not in DEMO_PATIENTS:
+
+    storage = request.app["storage"]
+    patient = await storage.get_patient(patient_id)
+    if not patient:
         raise web.HTTPNotFound(text="Patient not found")
-    
-    patient = DEMO_PATIENTS[patient_id]
     critical_alerts = []
     
     for allergy in patient["stable_data"]["allergies"]:
@@ -526,11 +579,11 @@ async def get_patient_snapshot(request):
 async def get_emergency_data(request):
     session = verify_token(request)
     patient_id = request.match_info['patient_id']
-    
-    if patient_id not in DEMO_PATIENTS:
+
+    storage = request.app["storage"]
+    patient = await storage.get_patient(patient_id)
+    if not patient:
         raise web.HTTPNotFound(text="Patient not found")
-    
-    patient = DEMO_PATIENTS[patient_id]
     
     # Get all allergies for emergency mode
     all_allergies = [
@@ -594,11 +647,11 @@ async def get_emergency_data(request):
 async def get_patient_history(request):
     session = verify_token(request)
     patient_id = request.match_info['patient_id']
-    
-    if patient_id not in DEMO_PATIENTS:
+
+    storage = request.app["storage"]
+    patient = await storage.get_patient(patient_id)
+    if not patient:
         raise web.HTTPNotFound(text="Patient not found")
-    
-    patient = DEMO_PATIENTS[patient_id]
     timeline = []
     
     for visit in patient["dynamic_data"].get("recent_visits", []):
@@ -628,16 +681,34 @@ async def get_patient_history(request):
 async def get_ai_summary(request):
     session = verify_token(request)
     patient_id = request.match_info['patient_id']
-    
-    if patient_id not in DEMO_PATIENTS:
+
+    storage = request.app["storage"]
+    patient = await storage.get_patient(patient_id)
+    if not patient:
         raise web.HTTPNotFound(text="Patient not found")
-    
-    patient = DEMO_PATIENTS[patient_id]
-    
+
+    mode = (request.query.get("mode", "standard") or "standard").lower()
+    advanced_mode = mode in ("advanced", "full")
+
     # Generate AI-powered summary using Gemini
     ai_result = generate_ai_summary(patient)
-    
-    return web.json_response({
+
+    interaction_analysis = None
+    emergency_insights = None
+
+    if advanced_mode:
+        interaction_analysis = validate_medication_interactions(
+            patient.get("dynamic_data", {}).get("current_medications", [])
+        )
+        emergency_insights = generate_emergency_insights({
+            "patient_name": patient.get("demographics", {}).get("name", "Unknown"),
+            "age": patient.get("demographics", {}).get("age", "Unknown"),
+            "critical_allergies": patient.get("stable_data", {}).get("allergies", []),
+            "chronic_conditions": patient.get("stable_data", {}).get("chronic_conditions", []),
+            "current_medications": patient.get("dynamic_data", {}).get("current_medications", [])
+        })
+
+    response = {
         "patient_id": patient_id,
         "patient_name": patient["demographics"]["name"],
         "generated_at": datetime.now().isoformat(),
@@ -729,7 +800,16 @@ async def get_ai_summary(request):
             "Does not make clinical recommendations",
             "Always verify against original source documents"
         ]
-    })
+    }
+
+    if advanced_mode:
+        response["advanced"] = {
+            "interaction_analysis": interaction_analysis,
+            "emergency_insights": emergency_insights,
+            "mode": "advanced"
+        }
+
+    return web.json_response(response)
 
 async def get_pharmacy_view(request):
     session = verify_token(request)
@@ -737,10 +817,15 @@ async def get_pharmacy_view(request):
         raise web.HTTPForbidden(text="Pharmacist access required")
     
     patient_id = request.match_info['patient_id']
-    if patient_id not in DEMO_PATIENTS:
+
+    storage = request.app["storage"]
+    patient = await storage.get_patient(patient_id)
+    if not patient:
         raise web.HTTPNotFound(text="Patient not found")
-    
-    patient = DEMO_PATIENTS[patient_id]
+
+    interaction_analysis = validate_medication_interactions(
+        patient.get("dynamic_data", {}).get("current_medications", [])
+    )
     
     return web.json_response({
         "patient_id": patient_id,
@@ -748,7 +833,8 @@ async def get_pharmacy_view(request):
         "date_of_birth": patient["demographics"]["date_of_birth"],
         "allergies": patient["stable_data"]["allergies"],
         "current_medications": patient["dynamic_data"]["current_medications"],
-        "interaction_warnings": [],
+        "interaction_warnings": interaction_analysis.get("warnings", []) if interaction_analysis else [],
+        "interaction_analysis": interaction_analysis,
         "medication_history": [
             {
                 "medication": m["name"],
@@ -814,48 +900,17 @@ async def get_file_content(request):
         raise web.HTTPBadRequest(text="Not a file")
     
     try:
-        content = ""
-        is_pdf = filename.lower().endswith('.pdf')
-        
-        # Extract text from PDF
-        if is_pdf:
-            try:
-                with pdfplumber.open(file_path) as pdf:
-                    for page_num, page in enumerate(pdf.pages, 1):
-                        extracted_text = page.extract_text()
-                        if extracted_text:
-                            content += f"\n--- PAGE {page_num} ---\n{extracted_text}\n"
-                    
-                    # Also extract tables if present
-                    for page_num, page in enumerate(pdf.pages, 1):
-                        tables = page.extract_tables()
-                        if tables:
-                            content += f"\n--- TABLES ON PAGE {page_num} ---\n"
-                            for table in tables:
-                                for row in table:
-                                    content += " | ".join(str(cell) if cell else "" for cell in row) + "\n"
-            except Exception as pdf_error:
-                print(f"Error reading PDF with pdfplumber: {pdf_error}")
-                # Fallback: try to read as text
-                try:
-                    content = file_path.read_text(encoding='utf-8', errors='ignore')
-                except:
-                    content = f"[PDF file could not be extracted: {str(pdf_error)}]"
-        else:
-            # Read text files
-            try:
-                content = file_path.read_text(encoding='utf-8', errors='ignore')
-            except UnicodeDecodeError:
-                try:
-                    content = file_path.read_text(encoding='latin-1', errors='ignore')
-                except:
-                    content = "[Binary file - cannot display as text]"
+        file_bytes = file_path.read_bytes()
+        extraction = extract_document_text(filename, file_bytes)
+        content = extraction["combined_text"] or extraction["text_content"] or extraction["ocr_text"]
         
         return web.json_response({
             "filename": filename,
             "size": file_path.stat().st_size,
             "content": content,
-            "is_pdf": is_pdf,
+            "is_pdf": filename.lower().endswith('.pdf'),
+            "extraction_method": extraction["extraction_method"],
+            "ocr_text": extraction["ocr_text"],
             "modified": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
         })
     except Exception as e:
@@ -867,11 +922,16 @@ async def upload_file(request):
         reader = await request.multipart()
         file_content = b''
         filename = ''
+        file_mime = ''
+        patient_id_override = None
         
         async for field in reader:
             if field.name == 'file':
                 filename = field.filename
+                file_mime = field.headers.get('Content-Type', '')
                 file_content = await field.read()
+            elif field.name == 'patient_id':
+                patient_id_override = (await field.text()).strip()
         
         if not filename:
             return web.json_response({
@@ -888,36 +948,16 @@ async def upload_file(request):
         with open(file_path, 'wb') as f:
             f.write(file_content)
         
-        text_content = ""
-        try:
-            # Check if it's a PDF file
-            if filename.lower().endswith('.pdf'):
-                try:
-                    import io
-                    pdf_file = io.BytesIO(file_content)
-                    with pdfplumber.open(pdf_file) as pdf:
-                        for page in pdf.pages:
-                            text_content += page.extract_text() + "\n"
-                except Exception as pdf_error:
-                    print(f"Error reading PDF: {pdf_error}")
-                    text_content = ""
-            else:
-                # Try text decoding for non-PDF files
-                try:
-                    text_content = file_content.decode('utf-8', errors='ignore')
-                except:
-                    try:
-                        text_content = file_content.decode('latin-1', errors='ignore')
-                    except:
-                        text_content = ""
-        except Exception as e:
-            print(f"Error processing file: {e}")
-            text_content = ""
+        extraction_result = extract_document_text(filename, file_content)
+        combined_text = extraction_result["combined_text"]
         
-        extracted_data = extract_patient_data(text_content, filename)
+        extracted_data = extract_patient_data(combined_text, filename)
+        extracted_data["raw_text"] = combined_text
+        extracted_data["ocr_text"] = extraction_result["ocr_text"]
+        extracted_data["extraction_method"] = extraction_result["extraction_method"]
         
         # Try AI-enhanced extraction if available
-        ai_extracted = analyze_document_with_ai(text_content, filename)
+        ai_extracted = analyze_document_with_ai(combined_text, filename)
         if ai_extracted:
             print(f"✓ AI extraction successful")
             # Merge AI extraction with regex extraction (AI takes precedence)
@@ -931,9 +971,48 @@ async def upload_file(request):
         print(f"Type: {extracted_data.get('encounter_type')}")
         print(f"Facility: {extracted_data.get('facility')}")
         
+        storage = request.app["storage"]
+        events = request.app["events"]
+
+        if patient_id_override and patient_id_override != "NEW_PATIENT":
+            extracted_data["patient_id"] = patient_id_override
+            if extracted_data.get("patient_record"):
+                extracted_data["patient_record"]["patient_id"] = patient_id_override
+
         if extracted_data.get('patient_id') and extracted_data.get('patient_record'):
-            DEMO_PATIENTS[extracted_data['patient_id']] = extracted_data['patient_record']
-            print(f"✓ Patient record created: {extracted_data['patient_id']} - {extracted_data.get('patient_name')}")
+            patient_id = extracted_data['patient_id']
+            existing_patient = await storage.get_patient(patient_id)
+            patient_record = extracted_data['patient_record']
+
+            if existing_patient and patient_id_override:
+                patient_record = merge_patient_records(existing_patient, patient_record)
+
+            await storage.upsert_patient(patient_id, patient_record)
+            print(f"✓ Patient record created/updated: {patient_id} - {extracted_data.get('patient_name')}")
+
+            await events.publish({
+                "type": "patient_updated",
+                "patient_id": patient_id,
+                "source": "document_upload",
+                "timestamp": datetime.now().isoformat()
+            })
+
+        await storage.add_document({
+            "patient_id": extracted_data.get("patient_id"),
+            "filename": filename,
+            "mime_type": file_mime,
+            "storage_path": file_path,
+            "size_bytes": len(file_content),
+            "extracted_data": extracted_data,
+            "ocr_text": extraction_result["ocr_text"]
+        })
+
+        await events.publish({
+            "type": "document_uploaded",
+            "patient_id": extracted_data.get("patient_id"),
+            "filename": filename,
+            "timestamp": datetime.now().isoformat()
+        })
         
         return web.json_response({
             "success": True,
@@ -955,6 +1034,48 @@ async def upload_file(request):
             "message": f"Upload failed: {str(e)}",
             "extracted_data": {}
         }, status=500)
+
+def merge_patient_records(existing_record, new_record):
+    merged = json.loads(json.dumps(existing_record))
+
+    merged.setdefault("stable_data", {})
+    merged.setdefault("dynamic_data", {})
+
+    def merge_list(target_list, source_list, key):
+        existing_keys = {item.get(key) for item in target_list if item.get(key)}
+        for item in source_list:
+            item_key = item.get(key)
+            if item_key and item_key in existing_keys:
+                continue
+            target_list.append(item)
+            if item_key:
+                existing_keys.add(item_key)
+
+    # Stable data merges
+    stable = merged["stable_data"]
+    stable.setdefault("allergies", [])
+    stable.setdefault("chronic_conditions", [])
+    stable.setdefault("implants_devices", [])
+    stable.setdefault("previous_surgeries", [])
+
+    merge_list(stable["allergies"], new_record.get("stable_data", {}).get("allergies", []), "substance")
+    merge_list(stable["chronic_conditions"], new_record.get("stable_data", {}).get("chronic_conditions", []), "condition")
+    merge_list(stable["implants_devices"], new_record.get("stable_data", {}).get("implants_devices", []), "type")
+    merge_list(stable["previous_surgeries"], new_record.get("stable_data", {}).get("previous_surgeries", []), "surgery")
+
+    # Dynamic data merges
+    dynamic = merged["dynamic_data"]
+    dynamic.setdefault("current_medications", [])
+    dynamic.setdefault("recent_labs", [])
+    dynamic.setdefault("recent_diagnoses", [])
+    dynamic.setdefault("recent_visits", [])
+
+    merge_list(dynamic["current_medications"], new_record.get("dynamic_data", {}).get("current_medications", []), "name")
+    merge_list(dynamic["recent_labs"], new_record.get("dynamic_data", {}).get("recent_labs", []), "test_name")
+    merge_list(dynamic["recent_diagnoses"], new_record.get("dynamic_data", {}).get("recent_diagnoses", []), "diagnosis")
+    merge_list(dynamic["recent_visits"], new_record.get("dynamic_data", {}).get("recent_visits", []), "visit_id")
+
+    return merged
 
 def extract_patient_data(text_content, filename):
     extracted = {
@@ -1315,6 +1436,8 @@ def extract_patient_data(text_content, filename):
     return extracted
 
 app = web.Application()
+app.on_startup.append(init_app)
+app.on_cleanup.append(cleanup_app)
 cors = aiohttp_cors.setup(app, defaults={
     "*": aiohttp_cors.ResourceOptions(
         allow_credentials=True,
@@ -1326,6 +1449,7 @@ cors = aiohttp_cors.setup(app, defaults={
 
 app.router.add_get('/', root)
 app.router.add_get('/health', health_check)
+app.router.add_get('/api/v1/sync/stream', sync_stream)
 app.router.add_post('/api/v1/auth/login', login)
 app.router.add_post('/api/v1/auth/logout', logout)
 app.router.add_get('/api/v1/patients/search', search_patients)

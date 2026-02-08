@@ -1,15 +1,63 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { User, Calendar, Activity, Droplet, AlertTriangle, Pill, Heart, FileText } from 'lucide-react'
 import FileUpload from './FileUpload'
 import FileBrowser from './FileBrowser'
 
+const API_BASE = 'http://localhost:8000'
+
 function PatientSnapshot({ token, userInfo, patient, onBack, onEmergencyMode, onViewAISummary, onLogout }) {
   const [showFileBrowser, setShowFileBrowser] = useState(false)
-  if (!patient) {
+  const [currentPatient, setCurrentPatient] = useState(patient)
+
+  useEffect(() => {
+    setCurrentPatient(patient)
+  }, [patient])
+
+  useEffect(() => {
+    if (!token || !patient?.patient_id) return
+
+    const streamUrl = `${API_BASE}/api/v1/sync/stream?patient_id=${encodeURIComponent(patient.patient_id)}&token=${encodeURIComponent(token)}`
+    const source = new EventSource(streamUrl)
+
+    let isRefreshing = false
+    const refreshPatient = async () => {
+      if (isRefreshing) return
+      isRefreshing = true
+      try {
+        const response = await fetch(
+          `${API_BASE}/api/v1/patients/${patient.patient_id}/snapshot`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setCurrentPatient(data)
+        }
+      } catch (err) {
+        console.error('Failed to refresh patient data:', err)
+      } finally {
+        isRefreshing = false
+      }
+    }
+
+    source.addEventListener('patient_updated', refreshPatient)
+    source.addEventListener('document_uploaded', refreshPatient)
+
+    source.onerror = () => {
+      source.close()
+    }
+
+    return () => {
+      source.close()
+    }
+  }, [token, patient?.patient_id])
+
+  if (!currentPatient) {
     return <div>Loading...</div>
   }
 
-  const { demographics, critical_alerts, stable_data, dynamic_data } = patient
+  const { demographics, critical_alerts, stable_data, dynamic_data } = currentPatient
 
   return (
     <div className="page-container">
@@ -54,7 +102,7 @@ function PatientSnapshot({ token, userInfo, patient, onBack, onEmergencyMode, on
                 <User className="w-5 h-5 text-gray-600" />
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">Patient ID</p>
-                  <p className="font-semibold text-gray-800">{patient.patient_id}</p>
+                  <p className="font-semibold text-gray-800">{currentPatient.patient_id}</p>
                 </div>
               </div>
 
@@ -251,7 +299,7 @@ function PatientSnapshot({ token, userInfo, patient, onBack, onEmergencyMode, on
             </div>
           </div>
           <div className="p-6">
-            <FileUpload token={token} patientId={patient.patient_id} />
+            <FileUpload token={token} patientId={currentPatient.patient_id} />
           </div>
         </div>
       </div>

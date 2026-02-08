@@ -32,8 +32,16 @@ The system consolidates fragmented patient records from multiple sources (hospit
 ### Technical Stack
 - **Backend**: Python 3.14, aiohttp (async web framework)
 - **Frontend**: React 18, Vite, Modern CSS
-- **Data**: In-memory demo data (production would use PostgreSQL)
+- **Data**: PostgreSQL (optional, JSONB) with in-memory fallback for demo
 - **Authentication**: Token-based with role detection
+- **Realtime**: Server-Sent Events (SSE) sync stream
+- **OCR**: Tesseract (optional) for image-based document extraction
+
+### Planned (Roadmap)
+- [ ] PostgreSQL database integration
+- [ ] Real-time data synchronization
+- [ ] Document upload and OCR processing
+- [ ] Advanced AI summarization with LLM integration
 
 ---
 
@@ -74,6 +82,23 @@ pip install aiohttp aiohttp-cors
 # Verify installation
 python -c "import aiohttp; print('Backend ready!')"
 ```
+
+#### Optional: PostgreSQL + OCR
+
+Set environment variables (see `backend/.env.example`):
+- `DATABASE_URL=postgresql://user:password@localhost:5432/clinix`
+- `ENABLE_DB_SEED=true`
+- `TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe` (Windows, optional)
+
+If you want OCR for image uploads, install Tesseract and ensure it’s on PATH or set `TESSERACT_CMD`.
+
+#### Optional: Fanar LLM (Advanced AI)
+
+Set environment variables (see `backend/.env.example`):
+- `LLM_PROVIDER=fanar`
+- `FANAR_API_KEY=your_key`
+- `FANAR_LLM_URL=https://...` (Fanar LLM endpoint)
+- `FANAR_LLM_MODEL=...` (optional)
 
 ### 3. Frontend Setup
 
@@ -453,12 +478,12 @@ For questions, issues, or contributions:
 - ✅ Emergency mode interface
 - ✅ AI summary generation
 - ✅ Demo data for 2 patients
+- ✅ PostgreSQL integration (optional)
+- ✅ Real-time data sync (SSE)
+- ✅ Document upload with OCR (image OCR optional)
+- ✅ Advanced AI summarization (LLM)
 
 ### Future Enhancements
-- [ ] PostgreSQL database integration
-- [ ] Real-time data synchronization
-- [ ] Document upload and OCR processing
-- [ ] Advanced AI summarization with LLM integration
 - [ ] Mobile app (iOS/Android)
 - [ ] FHIR API compliance
 - [ ] Multi-hospital federation

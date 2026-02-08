@@ -11,6 +11,7 @@ function PatientSearch({ token, userInfo, onPatientSelect, onLogout }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showFileBrowser, setShowFileBrowser] = useState(false)
+  const [showUpload, setShowUpload] = useState(false)
 
   const handleSearch = async (e) => {
     e.preventDefault()
@@ -72,81 +73,152 @@ function PatientSearch({ token, userInfo, onPatientSelect, onLogout }) {
       </header>
 
       <div className="content">
-        <div className="search-container">
-          <form onSubmit={handleSearch} className="search-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label>Search Method</label>
-                <select 
-                  value={searchMethod} 
-                  onChange={(e) => setSearchMethod(e.target.value)}
-                  className="form-select"
+        <div className="search-layout">
+          <div className="search-main">
+            <div className="search-container">
+              <div className="search-header">
+                <div>
+                  <h2 className="panel-title">Find a Patient</h2>
+                  <p className="panel-subtitle-muted">Use ID, name, or barcode to locate a record quickly.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowUpload(!showUpload)}
+                  className="btn-secondary"
                 >
-                  <option value="PATIENT_ID">Patient ID</option>
-                  <option value="NATIONAL_ID">National ID</option>
-                  <option value="PARTIAL_NAME">Name</option>
-                  <option value="QR_CODE">QR Code</option>
-                  <option value="BARCODE">Barcode</option>
-                </select>
-              </div>
-
-              <div className="form-group flex-grow">
-                <label>Search Value</label>
-                <input
-                  type="text"
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  placeholder="Enter search term"
-                  required
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>&nbsp;</label>
-                <button type="submit" className="btn-primary" disabled={loading}>
-                  {loading ? 'Searching...' : 'Search'}
+                  {showUpload ? 'Hide Upload' : 'Upload Records'}
                 </button>
               </div>
+
+              <form onSubmit={handleSearch} className="search-form">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Search Method</label>
+                    <select
+                      value={searchMethod}
+                      onChange={(e) => setSearchMethod(e.target.value)}
+                      className="form-select"
+                    >
+                      <option value="PATIENT_ID">Patient ID</option>
+                      <option value="NATIONAL_ID">National ID</option>
+                      <option value="PARTIAL_NAME">Name</option>
+                      <option value="QR_CODE">QR Code</option>
+                      <option value="BARCODE">Barcode</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group flex-grow">
+                    <label>Search Value</label>
+                    <input
+                      type="text"
+                      value={searchValue}
+                      onChange={(e) => setSearchValue(e.target.value)}
+                      placeholder="Enter search term"
+                      required
+                      className="form-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>&nbsp;</label>
+                    <button type="submit" className="btn-primary" disabled={loading}>
+                      {loading ? 'Searching...' : 'Search'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {error && <div className="error-message">{error}</div>}
+
+              {showUpload && (
+                <div className="upload-panel">
+                  <h3 className="panel-title">Upload Patient Records</h3>
+                  <p className="panel-subtitle-muted">Drag and drop medical documents to add new patient records.</p>
+                  <FileUpload token={token} patientId="NEW_PATIENT" />
+                </div>
+              )}
+
+              {searchResults.length > 0 && (
+                <div className="search-results">
+                  <h2>Search Results ({searchResults.length})</h2>
+                  {searchResults.map((result) => (
+                    <div key={result.patient_id} className="result-card">
+                      <div className="result-info">
+                        <h3>{result.name}</h3>
+                        <p>Patient ID: {result.patient_id}</p>
+                        <p>DOB: {result.date_of_birth} (Age: {result.age})</p>
+                        <p>Gender: {result.gender}</p>
+                        <p className="match-score">Match: {(result.match_score * 100).toFixed(0)}% - {result.match_reason}</p>
+                      </div>
+                      <button
+                        onClick={() => handleSelectPatient(result.patient_id)}
+                        className="btn-primary"
+                      >
+                        Select Patient
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </form>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <div className="demo-info">
-            <p><strong>Demo Patient IDs:</strong></p>
-            <p>PAT_987654 - John Smith (64M)</p>
-            <p>PAT_654321 - Mary Johnson (69F)</p>
           </div>
 
-          {searchResults.length > 0 && (
-            <div className="search-results">
-              <h2>Search Results ({searchResults.length})</h2>
-              {searchResults.map((result) => (
-                <div key={result.patient_id} className="result-card">
-                  <div className="result-info">
-                    <h3>{result.name}</h3>
-                    <p>Patient ID: {result.patient_id}</p>
-                    <p>DOB: {result.date_of_birth} (Age: {result.age})</p>
-                    <p>Gender: {result.gender}</p>
-                    <p className="match-score">Match: {(result.match_score * 100).toFixed(0)}% - {result.match_reason}</p>
-                  </div>
-                  <button 
-                    onClick={() => handleSelectPatient(result.patient_id)}
-                    className="btn-primary"
-                  >
-                    Select Patient
-                  </button>
-                </div>
-              ))}
+          <div className="search-side">
+            <div className="panel-card">
+              <h3 className="panel-title">Quick Start (Local)</h3>
+              <p className="panel-subtitle-muted">Start backend and frontend in two terminals.</p>
+              <div className="code-block">
+                <span className="code-title">Terminal 1 (Backend)</span>
+                <code>cd backend</code>
+                <code>venv\Scripts\activate</code>
+                <code>pip install -r requirements.txt</code>
+                <code>python main_aiohttp.py</code>
+              </div>
+              <div className="code-block">
+                <span className="code-title">Terminal 2 (Frontend)</span>
+                <code>cd frontend</code>
+                <code>npm install</code>
+                <code>npm run dev</code>
+              </div>
+              <div className="panel-note">
+                Open: <strong>http://localhost:5173</strong>
+              </div>
             </div>
-          )}
-        </div>
 
-        <div style={{ marginTop: '30px', background: '#e8f4f8', padding: '20px', borderRadius: '12px', border: '3px solid #3498db' }}>
-          <h3 style={{ fontSize: '20px', color: '#2c3e50', marginBottom: '10px' }}>📄 Upload Patient Records</h3>
-          <p style={{ fontSize: '14px', color: '#7f8c8d', marginBottom: '20px' }}>Drag and drop medical documents to add new patient records to the system</p>
-          <FileUpload token={token} patientId="NEW_PATIENT" />
+            <div className="panel-card">
+              <h3 className="panel-title">Common Tasks</h3>
+              <div className="task-list">
+                <div className="task-item">Search a patient by ID or name.</div>
+                <div className="task-item">Upload documents to create new records.</div>
+                <div className="task-item">Open a patient and view AI Summary.</div>
+                <div className="task-item">Enable Emergency Mode in critical cases.</div>
+              </div>
+            </div>
+
+            <div className="panel-card">
+              <h3 className="panel-title">Demo Patient IDs</h3>
+              <div className="demo-list">
+                <div className="demo-item">
+                  <strong>PAT_987654</strong> — John Smith (64M)
+                </div>
+                <div className="demo-item">
+                  <strong>PAT_654321</strong> — Mary Johnson (69F)
+                </div>
+              </div>
+            </div>
+
+            <div className="panel-card">
+              <h3 className="panel-title">Optional Services</h3>
+              <div className="panel-note">
+                PostgreSQL, OCR, and Fanar LLM can be enabled via <strong>backend/.env</strong>.
+              </div>
+              <div className="code-block">
+                <code>DATABASE_URL=postgresql://user:password@localhost:5432/clinix</code>
+                <code>LLM_PROVIDER=fanar</code>
+                <code>FANAR_LLM_URL=...</code>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
